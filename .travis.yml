@@ -42,6 +42,7 @@ addons:
       - python-pip
       - gperf
       - ccache
+      - astyle
 
 before_install:
   # Save path to the git respository
@@ -130,6 +131,11 @@ install:
   - export PATH=$HOME/ccache_bin:$PATH:$HOME/${PROJECT_TARGET}/${PROJECT_GCC_PREFIX}/bin
 
 script:
+  - |
+    if astyle -n --options=.astylerc src/main/*.c src/main/*.h | grep 'Formatted'; then
+      git diff
+      exit 1
+    fi
   - rm -f ${PROJECT_LOG}
 
   # show what is actually executed because travis does not show expanded
