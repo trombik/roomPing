@@ -1,5 +1,8 @@
 #if !defined(__TASK_PUBLISH__H__)
 #define __TASK_PUBLISH__H__
 
-void task_publish(void *pvParamters);
+#include <esp_err.h>
+
+esp_err_t task_publish_start(void);
+
 #endif
