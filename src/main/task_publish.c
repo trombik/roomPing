@@ -143,6 +143,26 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     mqtt_event_handler_cb(event_data);
 }
 
+
+static int mqtt_publish(const char *path, const char *value)
+{
+    const int qos = 1;
+    const int retain = 1;
+    int length = 0;
+    char topic[MAX_MQTT_TOPIC_LENGTH];
+
+    if (snprintf(topic, sizeof(topic), "%s/%s/%s", TOPIC, device_id, path) >= sizeof(topic)) {
+        ESP_LOGE(TAG, "the size of topic is too small (max %d), truncated", sizeof(topic));
+    }
+    return esp_mqtt_client_publish(
+            client,
+            topic,
+            value,
+            length,
+            qos,
+            retain);
+}
+
 static void task_publish(void *pvParamters)
 {
     char influx_metric_str[MAX_INFLUX_LENGTH];
@@ -174,6 +194,10 @@ static void task_publish(void *pvParamters)
                     packet_loss_rate,
                     m.tv_sec);
             printf("%s\n", influx_metric_str);
+            if (mqtt_publish("icmp/packet_lost_rate/influx", influx_metric_str) == 0) {
+                ESP_LOGE(TAG, "failed to publish icmp/round_trip_average/influx");
+            }
+
             /* round_trip_average */
             snprintf(influx_metric_str, sizeof(influx_metric_str),
                     "icmp,target=%s,target_addr=%s,device_id=%s round_trip_average=%d %ld000000000",
@@ -183,6 +207,9 @@ static void task_publish(void *pvParamters)
                     m.round_trip_average,
                     m.tv_sec);
             printf("%s\n", influx_metric_str);
+            if (mqtt_publish("icmp/round_trip_average/influx", influx_metric_str) == 0) {
+                ESP_LOGE(TAG, "failed to publish icmp/round_trip_average/influx");
+            }
         }
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
