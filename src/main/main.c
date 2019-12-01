@@ -81,11 +81,7 @@ void app_main()
     }
 
     ESP_LOGI(TAG, "Creating task_publish");
-    r = xTaskCreate(task_publish, "task_publish", configMINIMAL_STACK_SIZE * 5, NULL, 5, NULL);
-    if (r != pdPASS) {
-        ESP_LOGE(TAG, "failed to create task_publish");
-        goto fail;
-    }
+    ESP_ERROR_CHECK(task_publish_start());
 
     ESP_LOGI(TAG, "Creating task_icmp_client");
     for (int i = 0; i < N_TARGETS; i++) {

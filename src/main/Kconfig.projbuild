@@ -1,12 +1,4 @@
 menu "Project configuration"
-    config PROJECT_DEST_ADDR
-        string "IP address of the destination"
-        default "192.168.1.100"
-        help
-            The IP address to send metrics to.
-    config PROJECT_DEST_PORT
-        int "The port number to send metrics to"
-        default 8125
     config PROJECT_WIFI_SSID
         string "WiFi SSID"
         default "myssid"
@@ -17,4 +9,10 @@ menu "Project configuration"
         default "mypassword"
         help
             WiFi password
+    config PROJECT_MQTT_BROKER_URI
+        string "MQTT broaker URI"
+        default "mqtt://192.168.1.100"
+    config PROJECT_MQTT_TOPIC
+        string "MQTT topic"
+        default "mytopic"
 endmenu

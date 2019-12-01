@@ -12,6 +12,6 @@ struct metric {
     uint32_t packet_sent;
     uint32_t packet_recieved;
     uint32_t round_trip_average;
-    time_t timestamp;
+    time_t tv_sec;
 };
 #endif

@@ -47,7 +47,7 @@ static void icmp_callback_on_ping_end(esp_ping_handle_t handle, void *args)
         goto fail;
     }
     printf("%d packets transmitted, %d received, %d%% packet loss, total ping session time %dms, average %dms @%ld\n",
-           transmitted, received, loss, total_time_ms, m->round_trip_average, m->timestamp);
+           transmitted, received, loss, total_time_ms, m->round_trip_average, m->tv_sec);
 fail:
     return;
 }
@@ -132,7 +132,7 @@ void task_icmp_client(void *pvParamters)
         m.packet_sent = 0;
         m.packet_recieved = 0;
         m.round_trip_average = 0;
-        m.timestamp = tp.tv_sec;
+        m.tv_sec = tp.tv_sec;
 
         ESP_LOGI(hostname, "Starting ICMP seesion");
         if (esp_ping_start(ping) != ESP_OK) {
