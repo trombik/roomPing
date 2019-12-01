@@ -31,7 +31,7 @@ const char targets[N_TARGETS][MAX_TARGET_STRING_SIZE] = {
 int WIFI_CONNECTED_BIT = BIT0;
 static const char *TAG = "app_main";
 EventGroupHandle_t s_wifi_event_group;
-QueueHandle_t queue_statsd;
+QueueHandle_t queue_metric;
 
 void app_main()
 {
@@ -74,8 +74,8 @@ void app_main()
     }
 
     ESP_LOGI(TAG, "Creating queue for metrics");
-    queue_statsd = xQueueCreate(10, sizeof(struct metric));
-    if (queue_statsd == 0) {
+    queue_metric = xQueueCreate(10, sizeof(struct metric));
+    if (queue_metric == 0) {
         ESP_LOGE(TAG, "xQueueCreate() failed");
         goto fail;
     }

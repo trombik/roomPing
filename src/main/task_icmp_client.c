@@ -11,7 +11,7 @@
 
 #define TAG "task_icmp_client"
 
-extern QueueHandle_t queue_statsd;
+extern QueueHandle_t queue_metric;
 
 static void icmp_callback_on_ping_end(esp_ping_handle_t handle, void *args)
 {
@@ -42,7 +42,7 @@ static void icmp_callback_on_ping_end(esp_ping_handle_t handle, void *args)
     m->packet_recieved = received;
     m->packet_lost = transmitted - received;
 
-    if (xQueueSend(queue_statsd, m, (TickType_t) 0) != pdTRUE) {
+    if (xQueueSend(queue_metric, m, (TickType_t) 0) != pdTRUE) {
         ESP_LOGW(task_name, "xQueueSend() failed");
         goto fail;
     }

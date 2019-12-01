@@ -10,7 +10,7 @@
 
 #define TAG "task_publish"
 
-extern QueueHandle_t queue_statsd;
+extern QueueHandle_t queue_metric;
 
 static int unix2iso(uint32_t unix_time, char *string, int size)
 {
@@ -32,7 +32,7 @@ void task_publish(void *pvParamters)
     ESP_LOGI(TAG, "Starting the loop");
     while (1) {
         struct metric m;
-        if (xQueueReceive(queue_statsd, &m, (TickType_t) 10 )) {
+        if (xQueueReceive(queue_metric, &m, (TickType_t) 10 )) {
             char buf[64];
             unix2iso(m.timestamp, buf, sizeof(buf));
             ESP_LOGI(TAG, "Recieved a metric: packet_recieved %d @ %s", m.packet_recieved, buf);
