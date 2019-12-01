@@ -45,101 +45,102 @@ static esp_err_t mqtt_event_handler_cb(esp_mqtt_event_handle_t event)
     static char *data_text;
     static char *topic;
     switch (event->event_id) {
-        case MQTT_EVENT_CONNECTED:
-            ESP_LOGI(TAG_HANDLER, "MQTT_EVENT_CONNECTED");
-            xEventGroupSetBits(mqtt_event_group, MQTT_CONNECTED_BIT);
-            break;
-        case MQTT_EVENT_DISCONNECTED:
-            ESP_LOGI(TAG_HANDLER, "MQTT_EVENT_DISCONNECTED");
-            xEventGroupClearBits(mqtt_event_group, MQTT_CONNECTED_BIT);
-            break;
-        case MQTT_EVENT_PUBLISHED:
-            ESP_LOGI(TAG_HANDLER, "MQTT_EVENT_PUBLISHED");
-            break;
-        case MQTT_EVENT_ERROR:
-            ESP_LOGE(TAG_HANDLER, "MQTT_EVENT_ERROR");
-            break;
-        case MQTT_EVENT_SUBSCRIBED:
-            ESP_LOGI(TAG_HANDLER, "MQTT_EVENT_SUBSCRIBED");
-            break;
-        case MQTT_EVENT_UNSUBSCRIBED:
-            ESP_LOGI(TAG_HANDLER, "MQTT_EVENT_UNSUBSCRIBED");
-            break;
-        case MQTT_EVENT_DATA:
-            ESP_LOGI(TAG_HANDLER, "MQTT_EVENT_DATA");
+    case MQTT_EVENT_CONNECTED:
+        ESP_LOGI(TAG_HANDLER, "MQTT_EVENT_CONNECTED");
+        xEventGroupSetBits(mqtt_event_group, MQTT_CONNECTED_BIT);
+        break;
+    case MQTT_EVENT_DISCONNECTED:
+        ESP_LOGI(TAG_HANDLER, "MQTT_EVENT_DISCONNECTED");
+        xEventGroupClearBits(mqtt_event_group, MQTT_CONNECTED_BIT);
+        break;
+    case MQTT_EVENT_PUBLISHED:
+        ESP_LOGI(TAG_HANDLER, "MQTT_EVENT_PUBLISHED");
+        break;
+    case MQTT_EVENT_ERROR:
+        ESP_LOGE(TAG_HANDLER, "MQTT_EVENT_ERROR");
+        break;
+    case MQTT_EVENT_SUBSCRIBED:
+        ESP_LOGI(TAG_HANDLER, "MQTT_EVENT_SUBSCRIBED");
+        break;
+    case MQTT_EVENT_UNSUBSCRIBED:
+        ESP_LOGI(TAG_HANDLER, "MQTT_EVENT_UNSUBSCRIBED");
+        break;
+    case MQTT_EVENT_DATA:
+        ESP_LOGI(TAG_HANDLER, "MQTT_EVENT_DATA");
 
-            /* the first event of data */
-            if (event->current_data_offset == 0) {
-                ESP_LOGD(TAG_HANDLER, "topic_len: %d total_data_len: %d",
-                        event->topic_len, event->total_data_len);
+        /* the first event of data */
+        if (event->current_data_offset == 0) {
+            ESP_LOGD(TAG_HANDLER, "topic_len: %d total_data_len: %d",
+                     event->topic_len, event->total_data_len);
 
-                /* the first event that contains topic.
-                 *
-                 * event->topic and event->data are not null-terminated C
-                 * string. allocate memory for topic_len + extra 1 byte for
-                 * '\0'.
-                 */
-                topic = malloc(event->topic_len + 1);
-                if (topic == NULL) {
-                    ESP_LOGE(TAG_HANDLER, "failed to malloc() on topic");
-                    break;
-                }
-                memset(topic, 0, 1);
-
-                /* ignore return value of strlcpy(). it is almost always more
-                 * than event->topic_len + 1, as event->topic is not C string.
-                 */
-                strlcpy(topic, event->topic, event->topic_len + 1);
-                ESP_LOGD(TAG_HANDLER, "topic: `%s`", topic);
-
-                data_text = malloc(event->total_data_len + 1);
-                if (data_text == NULL) {
-                    ESP_LOGE(TAG_HANDLER, "failed to malloc(): topic `%s`",
-                            topic);
-                    free(topic);
-                    topic = NULL;
-                    break;
-                }
-                memset(data_text, 0, 1);
-
-            }
-
-            /* the first and the rest of events */
-            if (topic == NULL || data_text == NULL) {
-
-                /* when something went wrong in parsing the first event,
-                 * ignore the rest of the events
-                 */
+            /* the first event that contains topic.
+             *
+             * event->topic and event->data are not null-terminated C
+             * string. allocate memory for topic_len + extra 1 byte for
+             * '\0'.
+             */
+            topic = malloc(event->topic_len + 1);
+            if (topic == NULL) {
+                ESP_LOGE(TAG_HANDLER, "failed to malloc() on topic");
                 break;
             }
-            strlcat(data_text, event->data, event->data_len + 1);
+            memset(topic, 0, 1);
 
-            /* the last event */
-            if (event->current_data_offset + event->data_len >= event->total_data_len) {
+            /* ignore return value of strlcpy(). it is almost always more
+             * than event->topic_len + 1, as event->topic is not C string.
+             */
+            strlcpy(topic, event->topic, event->topic_len + 1);
+            ESP_LOGD(TAG_HANDLER, "topic: `%s`", topic);
 
-                if (topic == NULL || data_text == NULL) {
-                    goto free;
-                }
-                ESP_LOGI(TAG_HANDLER, "topic: `%s` data: `%s`", topic, data_text);
-free:
+            data_text = malloc(event->total_data_len + 1);
+            if (data_text == NULL) {
+                ESP_LOGE(TAG_HANDLER, "failed to malloc(): topic `%s`",
+                         topic);
                 free(topic);
                 topic = NULL;
-                free(data_text);
-                data_text = NULL;
+                break;
             }
+            memset(data_text, 0, 1);
+
+        }
+
+        /* the first and the rest of events */
+        if (topic == NULL || data_text == NULL) {
+
+            /* when something went wrong in parsing the first event,
+             * ignore the rest of the events
+             */
             break;
+        }
+        strlcat(data_text, event->data, event->data_len + 1);
+
+        /* the last event */
+        if (event->current_data_offset + event->data_len >= event->total_data_len) {
+
+            if (topic == NULL || data_text == NULL) {
+                goto free;
+            }
+            ESP_LOGI(TAG_HANDLER, "topic: `%s` data: `%s`", topic, data_text);
+free:
+            free(topic);
+            topic = NULL;
+            free(data_text);
+            data_text = NULL;
+        }
+        break;
 #if defined(CONFIG_IDF_TARGET_ESP32)
-        case MQTT_EVENT_BEFORE_CONNECT:
-            break;
+    case MQTT_EVENT_BEFORE_CONNECT:
+        break;
 #endif
-        default:
-            ESP_LOGI(TAG_HANDLER, "unknown event: event id = %d", event->event_id);
-            break;
+    default:
+        ESP_LOGI(TAG_HANDLER, "unknown event: event id = %d", event->event_id);
+        break;
     }
     return ESP_OK;
 }
 
-static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data) {
+static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
+{
     mqtt_event_handler_cb(event_data);
 }
 
@@ -155,12 +156,12 @@ static int mqtt_publish(const char *path, const char *value)
         ESP_LOGE(TAG, "the size of topic is too small (max %d), truncated", sizeof(topic));
     }
     return esp_mqtt_client_publish(
-            client,
-            topic,
-            value,
-            length,
-            qos,
-            retain);
+               client,
+               topic,
+               value,
+               length,
+               qos,
+               retain);
 }
 
 static void task_publish(void *pvParamters)
@@ -187,12 +188,12 @@ static void task_publish(void *pvParamters)
             /* influxdb requires nanosecond, or int64_t, for timestamp field.
              * but second-precision is good enough for this use case */
             snprintf(influx_metric_str, sizeof(influx_metric_str),
-                    "icmp,target=%s,target_addr=%s,device_id=%s packet_loss_rate=%0.2f %ld000000000",
-                    m.target,
-                    target_addr_str,
-                    device_id,
-                    packet_loss_rate,
-                    m.tv_sec);
+                     "icmp,target=%s,target_addr=%s,device_id=%s packet_loss_rate=%0.2f %ld000000000",
+                     m.target,
+                     target_addr_str,
+                     device_id,
+                     packet_loss_rate,
+                     m.tv_sec);
             printf("%s\n", influx_metric_str);
             if (mqtt_publish("icmp/packet_lost_rate/influx", influx_metric_str) == 0) {
                 ESP_LOGE(TAG, "failed to publish icmp/round_trip_average/influx");
@@ -200,12 +201,12 @@ static void task_publish(void *pvParamters)
 
             /* round_trip_average */
             snprintf(influx_metric_str, sizeof(influx_metric_str),
-                    "icmp,target=%s,target_addr=%s,device_id=%s round_trip_average=%d %ld000000000",
-                    m.target,
-                    target_addr_str,
-                    device_id,
-                    m.round_trip_average,
-                    m.tv_sec);
+                     "icmp,target=%s,target_addr=%s,device_id=%s round_trip_average=%d %ld000000000",
+                     m.target,
+                     target_addr_str,
+                     device_id,
+                     m.round_trip_average,
+                     m.tv_sec);
             printf("%s\n", influx_metric_str);
             if (mqtt_publish("icmp/round_trip_average/influx", influx_metric_str) == 0) {
                 ESP_LOGE(TAG, "failed to publish icmp/round_trip_average/influx");
@@ -226,13 +227,13 @@ esp_err_t task_publish_start(void)
 
     ESP_ERROR_CHECK(esp_read_mac(mac, ESP_MAC_WIFI_STA));
     if (snprintf(mac_address, sizeof(mac_address), "%02x:%02x:%02x:%02x:%02x:%02x",
-            mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]) >= sizeof(mac_address)) {
+                 mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]) >= sizeof(mac_address)) {
         ESP_LOGE(TAG, "the size of mac_address is too small, truncated");
     }
 
     /* the latest homie spec does not allow `_` in topic path */
     if (snprintf(device_id, sizeof(device_id), "esp-%02x%02x%02x%02x%02x%02x",
-                mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]) >= sizeof(device_id)) {
+                 mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]) >= sizeof(device_id)) {
         ESP_LOGE(TAG, "the size of device_id is too small, truncated");
     }
 
@@ -271,16 +272,16 @@ esp_err_t task_publish_start(void)
     };
 
     switch (proto) {
-        case MQTT_TRANSPORT_OVER_TCP:
-        case MQTT_TRANSPORT_OVER_WS:
-            break;
-        case MQTT_TRANSPORT_OVER_WSS:
-        case MQTT_TRANSPORT_OVER_SSL:
-            config.cert_pem = (const char *)cert_pem_start;
-            break;
-        default:
-            ESP_LOGE(TAG, "Unknown MQTT_TRANSPORT_OVER_: %d", proto);
-            goto fail;
+    case MQTT_TRANSPORT_OVER_TCP:
+    case MQTT_TRANSPORT_OVER_WS:
+        break;
+    case MQTT_TRANSPORT_OVER_WSS:
+    case MQTT_TRANSPORT_OVER_SSL:
+        config.cert_pem = (const char *)cert_pem_start;
+        break;
+    default:
+        ESP_LOGE(TAG, "Unknown MQTT_TRANSPORT_OVER_: %d", proto);
+        goto fail;
     }
 
     mqtt_event_group = xEventGroupCreate();
@@ -294,13 +295,13 @@ esp_err_t task_publish_start(void)
         goto fail;
     }
     if ((err = esp_mqtt_client_register_event(
-                    client,
-                    ESP_EVENT_ANY_ID,
-                    mqtt_event_handler,
-                    client)) != ESP_OK) {
+                   client,
+                   ESP_EVENT_ANY_ID,
+                   mqtt_event_handler,
+                   client)) != ESP_OK) {
         ESP_LOGE(TAG, "esp_mqtt_client_register_event(): %s",
-                esp_err_to_name(err));
-                goto fail;
+                 esp_err_to_name(err));
+        goto fail;
     }
 
     while (1) {
@@ -313,11 +314,11 @@ esp_err_t task_publish_start(void)
         goto fail;
     }
     if (xTaskCreate(task_publish,
-                "task_publish",
-                configMINIMAL_STACK_SIZE * 5,
-                NULL,
-                5,
-                NULL) != pdPASS){
+                    "task_publish",
+                    configMINIMAL_STACK_SIZE * 5,
+                    NULL,
+                    5,
+                    NULL) != pdPASS) {
         ESP_LOGE(TAG, "xTaskCreate() failed");
         goto fail;
     }
