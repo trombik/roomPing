@@ -1,0 +1,9 @@
+*.o
+*.so
+*.so.*
+*.swp
+*.orig
+*.bak
+sdkconfig
+sdkconfig.old
+**/build
