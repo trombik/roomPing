@@ -65,9 +65,6 @@ esp_err_t init_wifi()
         goto fail;
     }
 
-    /* disable power saving for the best performance */
-    esp_wifi_set_ps(WIFI_PS_NONE);
-
     if ((err = esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL)) != ESP_OK) {
         ESP_LOGE(TAG, "esp_event_handler_register()");
         goto fail;
