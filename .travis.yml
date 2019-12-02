@@ -82,7 +82,6 @@ install:
   - export PROJECT_DISTFILE_DIR="${HOME}/distfiles"
   - export IDF_PATH=${TOOLCHAIN_DIR}/${PROJECT_SDK_NAME}
   - export PROJECT_LOG="${HOME}/build.log"
-  - export PROJECT_EXAMPLE_DIR="${PROJECT_PATH}/examples"
   - |
     case ${PROJECT_BUILD_METHOD} in
     idf)
@@ -159,7 +158,6 @@ script:
 
     cd src
     make defconfig || exit 1
-    cd ${PROJECT_EXAMPLE_DIR}
     ${PROJECT_BUILD_COMMAND} ${PROJECT_BUILD_COMMAND_ARG} >> ${PROJECT_LOG}
     if [ $? -ne 0 ]; then
       # when failed, show last 100 lines for debugging, and exit with
