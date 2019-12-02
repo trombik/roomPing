@@ -4,5 +4,5 @@ COMPONENT_OBJS :=  main.o \
 	sntp_connect.o \
 	task_icmp_client.o \
 	task_publish.o \
-	tas_ota.o
+	task_ota.o
 COMPONENT_EMBED_TXTFILES := cert.pem
