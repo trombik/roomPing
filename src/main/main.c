@@ -178,7 +178,7 @@ void app_main()
     }
 
     ESP_LOGI(TAG, "Creating queue for metrics");
-    queue_metric = xQueueCreate(10, sizeof(struct metric));
+    queue_metric = xQueueCreate(4, sizeof(influx_metric_t));
     if (queue_metric == 0) {
         ESP_LOGE(TAG, "xQueueCreate() failed");
         goto fail;
@@ -189,12 +189,13 @@ void app_main()
 
     ESP_LOGI(TAG, "Creating task_icmp_client");
     for (int i = 0; i < N_TARGETS; i++) {
-        r = xTaskCreate(task_icmp_client, "task_icmp_client", configMINIMAL_STACK_SIZE * 3, (void *)targets[i], 5, NULL);
+        r = xTaskCreate(task_icmp_client, "task_icmp_client", configMINIMAL_STACK_SIZE * 3, (void *)targets[i], 10, NULL);
         if (r != pdPASS) {
             ESP_LOGE(TAG, "failed to create task_icmp_client with target %s", targets[i]);
             goto fail;
         }
     }
+
     return;
 fail:
     ESP_LOGE(TAG, "Critical error, aborting");
