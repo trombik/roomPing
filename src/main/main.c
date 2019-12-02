@@ -6,12 +6,16 @@
 #include <esp_log.h>
 #include <esp_event.h>
 #include <nvs_flash.h>
+#include <esp_partition.h>
+#include <esp_flash_partitions.h>
+#include <esp_ota_ops.h>
 
 #include "esp_idf_lib_helpers.h"
 #include "wifi_connect.h"
 #include "sntp_connect.h"
 #include "task_icmp_client.h"
 #include "task_publish.h"
+#include "task_ota.h"
 #include "metric.h"
 
 #if !HELPER_TARGET_IS_ESP32
@@ -22,7 +26,8 @@
 #error esp-idf must be version 4.0 or newer
 #endif
 
-#define N_TARGETS 2
+#define HASH_SHA256_LEN (32)
+#define N_TARGETS (2)
 const char targets[N_TARGETS][MAX_TARGET_STRING_SIZE] = {
     "8.8.8.8",
     "yahoo.co.jp",
@@ -33,6 +38,76 @@ static const char *TAG = "app_main";
 EventGroupHandle_t s_wifi_event_group;
 QueueHandle_t queue_metric;
 
+static void print_sha256 (const uint8_t *image_hash, const char *label)
+{
+    char hash_print[HASH_SHA256_LEN * 2 + 1];
+    hash_print[HASH_SHA256_LEN * 2] = 0;
+    for (int i = 0; i < HASH_SHA256_LEN; ++i) {
+        sprintf(&hash_print[i * 2], "%02x", image_hash[i]);
+    }
+    ESP_LOGI(TAG, "%s: %s", label, hash_print);
+}
+
+static void show_digests()
+{
+    uint8_t sha_256[HASH_SHA256_LEN] = { 0 };
+    esp_partition_t partition;
+
+    // get sha256 digest for the partition table
+    partition.address   = ESP_PARTITION_TABLE_OFFSET;
+    partition.size      = ESP_PARTITION_TABLE_MAX_LEN;
+    partition.type      = ESP_PARTITION_TYPE_DATA;
+    esp_partition_get_sha256(&partition, sha_256);
+    print_sha256(sha_256, "SHA-256 for the partition table: ");
+
+    // get sha256 digest for bootloader
+    partition.address   = ESP_BOOTLOADER_OFFSET;
+    partition.size      = ESP_PARTITION_TABLE_OFFSET;
+    partition.type      = ESP_PARTITION_TYPE_APP;
+    esp_partition_get_sha256(&partition, sha_256);
+    print_sha256(sha_256, "SHA-256 for bootloader: ");
+
+    // get sha256 digest for running partition
+    esp_partition_get_sha256(esp_ota_get_running_partition(), sha_256);
+    print_sha256(sha_256, "SHA-256 for current firmware: ");
+    return;
+}
+
+static bool diagnostic(void)
+{
+    bool diagnostic_is_ok = true;
+
+    /* do diagnostic here */
+    return diagnostic_is_ok;
+}
+
+static void test_firmware()
+{
+    bool diagnostic_is_ok;
+    const esp_partition_t *running;
+    esp_err_t err;
+
+    running = esp_ota_get_running_partition();
+    esp_ota_img_states_t ota_state;
+    if ((err = esp_ota_get_state_partition(running, &ota_state)) == ESP_OK) {
+        if (ota_state == ESP_OTA_IMG_PENDING_VERIFY) {
+            /* run diagnostic function ... */
+            diagnostic_is_ok = diagnostic();
+            if (diagnostic_is_ok) {
+                ESP_LOGI(TAG, "Diagnostics completed successfully! Continuing execution ...");
+                esp_ota_mark_app_valid_cancel_rollback();
+            } else {
+                ESP_LOGE(TAG, "Diagnostics failed! Start rollback to the previous version ...");
+                esp_ota_mark_app_invalid_rollback_and_reboot();
+                /* NOT REACHED */
+            }
+        }
+    } else {
+        ESP_LOGW(TAG, "esp_ota_get_state_partition() failed: %s", esp_err_to_name(err));
+    }
+    return;
+}
+
 void app_main()
 {
     time_t now;
@@ -41,9 +116,18 @@ void app_main()
     BaseType_t r;
     esp_err_t err;
 
+    show_digests();
+    test_firmware();
+
     ESP_LOGI(TAG, "Initializing NVS");
     err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+
+        /* OTA app partition table has a smaller NVS partition size than the
+         * non-OTA partition table. This size mismatch may cause NVS
+         * initialization to fail.  If this happens, we erase NVS partition
+         * and initialize NVS again.
+         */
         ESP_ERROR_CHECK(nvs_flash_erase());
         err = nvs_flash_init();
     }
@@ -71,6 +155,14 @@ void app_main()
             ESP_LOGE(TAG, "init_sntp(): %x", err);
             goto fail;
         }
+    }
+    ESP_LOGI(TAG, "Configured time");
+
+    ESP_LOGI(TAG, "Starting OTA task");
+    err = task_ota_start();
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "task_ota_start() failed");
+        goto fail;
     }
 
     ESP_LOGI(TAG, "Creating queue for metrics");
