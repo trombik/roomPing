@@ -15,4 +15,7 @@ menu "Project configuration"
     config PROJECT_MQTT_TOPIC
         string "MQTT topic"
         default "mytopic"
+    config PROJECT_LATEST_APP_URL
+        string "URL to the latest application"
+        default "http://192.168.1.100/latest"
 endmenu
