@@ -19,7 +19,12 @@ Any of `ESP32` development boards.
 `make menuconfig` has `Project configuration` menu to modify default
 configuration.
 
+### Targets
+
+A list of targets is defined in [`src/main/target.h`](src/main/target.h).
+
 ## Example log output
 
 ```
+
 ```
