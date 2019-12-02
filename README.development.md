@@ -5,8 +5,10 @@
 * `git`
 * `openssl`
 * an HTTP client, such as `fetch(1)`, `wget`, or `curl`
+* `esp-idf` and its tool-chains installed
+* `astyle` (optional)
 
-### Environment variable
+### Environment variables
 
 #### `IDF_PATH`
 
