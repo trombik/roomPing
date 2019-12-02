@@ -32,6 +32,7 @@
 #include "task_icmp_client.h"
 #include "task_publish.h"
 #include "task_ota.h"
+#include "target.h"
 #include "metric.h"
 
 #if !HELPER_TARGET_IS_ESP32
@@ -43,11 +44,6 @@
 #endif
 
 #define HASH_SHA256_LEN (32)
-#define N_TARGETS (2)
-const char targets[N_TARGETS][MAX_TARGET_STRING_SIZE] = {
-    "8.8.8.8",
-    "yahoo.co.jp",
-};
 
 int WIFI_CONNECTED_BIT = BIT0;
 static const char *TAG = "app_main";
