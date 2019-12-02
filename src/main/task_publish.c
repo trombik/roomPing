@@ -26,6 +26,7 @@
 
 #include "task_publish.h"
 #include "metric.h"
+#include "util.h"
 
 #define TAG "task_publish"
 #define TAG_HANDLER "mqtt_event_handler_cb"
@@ -42,19 +43,6 @@ extern EventGroupHandle_t s_wifi_event_group;
 EventGroupHandle_t mqtt_event_group;
 esp_mqtt_client_handle_t client;
 char device_id[] = "esp8266_001122334455";
-
-static int unix2iso(suseconds_t sec, char *string, int size)
-{
-    time_t nowtime;
-    struct tm *nowtm;
-    char tmbuf[64];
-
-    nowtime = sec;
-    nowtm = localtime(&nowtime);
-    strftime(tmbuf, sizeof(tmbuf), "%FT%TZ", nowtm);
-    strlcpy(string, tmbuf, size);
-    return 0;
-}
 
 static esp_err_t mqtt_event_handler_cb(esp_mqtt_event_handle_t event)
 {
@@ -182,50 +170,14 @@ static int mqtt_publish(const char *path, const char *value)
 
 static void task_publish(void *pvParamters)
 {
-    char influx_metric_str[MAX_INFLUX_LENGTH];
-    float packet_loss_rate;
-    char target_addr_str[128];
+    influx_metric_t influx_metric;
 
     ESP_LOGI(TAG, "Starting the loop");
     while (1) {
-        struct metric m;
-        if (xQueueReceive(queue_metric, &m, (TickType_t) 10 )) {
-            char now_for_human[64];
-            unix2iso(m.tv_sec, now_for_human, sizeof(now_for_human));
-            ESP_LOGI(TAG, "Recieved a metric: packet_recieved %d @ %s", m.packet_recieved, now_for_human);
-
-            /* weather,location=us-midwest temperature=82 1465839830100400200
-             */
-            inet_ntoa_r(m.target_addr, target_addr_str, sizeof(target_addr_str) - 1);
-
-            /* packet_lost_rate */
-            packet_loss_rate = (float) m.packet_lost / m.packet_sent;
-
-            /* influxdb requires nanosecond, or int64_t, for timestamp field.
-             * but second-precision is good enough for this use case */
-            snprintf(influx_metric_str, sizeof(influx_metric_str),
-                     "icmp,target=%s,target_addr=%s,device_id=%s packet_loss_rate=%0.2f %ld000000000",
-                     m.target,
-                     target_addr_str,
-                     device_id,
-                     packet_loss_rate,
-                     m.tv_sec);
-            printf("%s\n", influx_metric_str);
-            if (mqtt_publish("icmp/packet_lost_rate/influx", influx_metric_str) == 0) {
-                ESP_LOGE(TAG, "failed to publish icmp/round_trip_average/influx");
-            }
-
-            /* round_trip_average */
-            snprintf(influx_metric_str, sizeof(influx_metric_str),
-                     "icmp,target=%s,target_addr=%s,device_id=%s round_trip_average=%d %ld000000000",
-                     m.target,
-                     target_addr_str,
-                     device_id,
-                     m.round_trip_average,
-                     m.tv_sec);
-            printf("%s\n", influx_metric_str);
-            if (mqtt_publish("icmp/round_trip_average/influx", influx_metric_str) == 0) {
-                ESP_LOGE(TAG, "failed to publish icmp/round_trip_average/influx");
+        if (xQueueReceive(queue_metric, &influx_metric, (TickType_t) 10 )) {
+            printf("%s\n", influx_metric);
+            if (mqtt_publish("influx", influx_metric) == 0) {
+                ESP_LOGE(TAG, "failed to publish");
             }
         }
         vTaskDelay(1000 / portTICK_PERIOD_MS);
@@ -234,24 +186,14 @@ static void task_publish(void *pvParamters)
 
 esp_err_t task_publish_start(void)
 {
-    uint8_t mac[6];
     esp_mqtt_transport_t proto;
     char topic_lwt[MAX_MQTT_TOPIC_LENGTH] = "";
     const char lwt_msg[] = "lost";
     esp_err_t err;
     char mac_address[] = "00:00:00:00:00:00";
 
-    ESP_ERROR_CHECK(esp_read_mac(mac, ESP_MAC_WIFI_STA));
-    if (snprintf(mac_address, sizeof(mac_address), "%02x:%02x:%02x:%02x:%02x:%02x",
-                 mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]) >= sizeof(mac_address)) {
-        ESP_LOGE(TAG, "the size of mac_address is too small, truncated");
-    }
-
-    /* the latest homie spec does not allow `_` in topic path */
-    if (snprintf(device_id, sizeof(device_id), "esp-%02x%02x%02x%02x%02x%02x",
-                 mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]) >= sizeof(device_id)) {
-        ESP_LOGE(TAG, "the size of device_id is too small, truncated");
-    }
+    ESP_ERROR_CHECK(get_mac_addr(mac_address, sizeof(mac_address)));
+    ESP_ERROR_CHECK(get_device_id(device_id, sizeof(device_id)));
 
     /* XXX some homie controller, notably openhab2, does not allow arbitrary
      * root topic. use "homie" as root.
@@ -331,7 +273,7 @@ esp_err_t task_publish_start(void)
     }
     if (xTaskCreate(task_publish,
                     "task_publish",
-                    configMINIMAL_STACK_SIZE * 5,
+                    configMINIMAL_STACK_SIZE * 10,
                     NULL,
                     5,
                     NULL) != pdPASS) {
