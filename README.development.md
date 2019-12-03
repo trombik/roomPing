@@ -35,9 +35,17 @@ Set `ESPPORT` to serial port of your device.
 export ESPPORT=/dev/ttyU0
 ```
 
-### OTA
+### `OTA` process
 
-To update the firmware on the device "Over The Air":
+1. The device check if it should update the firmware by requesting
+   `CONFIG_PROJECT_LATEST_APP_AVAILABLE`.
+2. If the status code of the request is 200, fetch a firmware at
+   `CONFIG_PROJECT_LATEST_APP_URL`. If not, sleep 60 sec.
+3. If the version of the fetched firmware is newer than the one of the running
+   firmware, start the `OTA` process. If not, sleep 60 sec.
+4. Repeat.
+
+`src/version.txt` contains version number.
 
 #### Generating self-signed certificates for HTTPS
 
@@ -99,16 +107,9 @@ machine.
 
 #### Running HTTPS server on the local machine
 
-Run `openssl s_server`. In this example, the server process listens on port
-8070.
-
-```
-> pwd
-/home/trombik/github/trombik/roomPing/src
-> openssl s_server -WWW -key main/certs/ca_key_ota.pem -cert main/certs/ca_cert_ota.pem -port 8070
-Using default temp DH parameters
-ACCEPT
-```
+Run HTTPS server. Do NOT use `openssl s_server -HTTP`. You should use a
+full-fledged HTTPS server, such as `nginx`, to avoid weird issues.  An example
+`nginx.conf` is located at [`tools/nginx.conf`](tools/nginx.conf).
 
 Make sure the URL works.
 
@@ -147,11 +148,19 @@ not, update the firmware over USB serial.
 > $IDF_PATH/tools/idf.py flash
 ```
 
+#### Create a file to tell the device to update the firmware
+
+```
+> pwd
+/home/trombik/github/trombik/roomPing/src
+> touch update
+```
+
 #### Performing `OTA`
 
 1. Increment version number in `src/version.txt`
 2. Build the project as usual
-3. Push the reset button on the device, or reboot the device
+3. Wait for the device to update the firmware
 
 An example log when newer version is available:
 
@@ -208,4 +217,12 @@ I (6023) task_ota: New firmware version: 2
 I (6023) task_ota: Running firmware version: 2
 W (6023) task_ota: Current running version is the same as a new. We will not continue the update.
 ...
+```
+
+#### Disable `OTA`
+
+```
+> pwd
+/home/trombik/github/trombik/roomPing/src
+> rm update
 ```

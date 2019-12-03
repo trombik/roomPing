@@ -11,17 +11,24 @@ menu "Project configuration"
             WiFi password
     config PROJECT_MQTT_BROKER_URI
         string "MQTT broaker URI"
-        default "mqtt://192.168.1.100"
+        default "mqtt://test.mosquitto.org:1883"
     config PROJECT_MQTT_TOPIC
         string "MQTT topic"
         default "mytopic"
     config PROJECT_LATEST_APP_URL
         string "URL to the latest application"
-        default "http://192.168.1.100/latest"
+        default "https://192.168.1.54:8070/build/roomPing.bin"
+    config PROJECT_LATEST_APP_AVAILABLE
+        string "URL to a file that indicates the device should try to update the firmware"
+        default "https://192.168.1.54:8070/update"
+        help
+            If HTTP response code of the request to this URL is 200, and
+            available firmware version is newer than the running firmware, the
+            device will install the new firmware.
+    config PROJECT_MAX_TARGET_STRING_SIZE
+        int "Max size of target hostname"
+        default 32
     config PROJECT_METRIC_QUEUE_SIZE
         int "Size of metric queue"
         default 10
-    config PROJECT_MAX_TARGET_STRING_SIZE
-        int "Size of target host name"
-        default 32
 endmenu

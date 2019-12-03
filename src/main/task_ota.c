@@ -48,16 +48,6 @@ static void __attribute__((noreturn)) task_fatal_error(void)
     }
 }
 
-static void infinite_loop(void)
-{
-    int i = 0;
-    ESP_LOGI(TAG, "When a new firmware is available on the server, press the reset button to download it");
-    while (1) {
-        ESP_LOGI(TAG, "Waiting for a new firmware ... %d", ++i);
-        vTaskDelay(2000 / portTICK_PERIOD_MS);
-    }
-}
-
 static void do_ota()
 {
     const esp_partition_t *update_partition = NULL;
@@ -143,14 +133,14 @@ static void do_ota()
                             ESP_LOGW(TAG, "Previously, there was an attempt to launch the firmware with %s version, but it failed.", invalid_app_info.version);
                             ESP_LOGW(TAG, "The firmware has been rolled back to the previous version.");
                             http_cleanup(client);
-                            infinite_loop();
+                            return;
                         }
                     }
 
                     if (memcmp(new_app_info.version, running_app_info.version, sizeof(new_app_info.version)) == 0) {
                         ESP_LOGW(TAG, "Current running version is the same as a new. We will not continue the update.");
                         http_cleanup(client);
-                        infinite_loop();
+                        return;
                     }
 
                     image_header_was_checked = true;
@@ -204,14 +194,54 @@ static void do_ota()
     esp_restart();
 }
 
+static esp_err_t ota_http_event_handler(esp_http_client_event_t *event)
+{
+    switch (event->event_id) {
+    case HTTP_EVENT_ERROR:
+        ESP_LOGD(TAG, "HTTP_EVENT_ERROR");
+        break;
+    case HTTP_EVENT_ON_CONNECTED:
+        ESP_LOGD(TAG, "HTTP_EVENT_ON_CONNECTED");
+        break;
+    case HTTP_EVENT_ON_DATA:
+    case HTTP_EVENT_HEADER_SENT:
+    case HTTP_EVENT_ON_HEADER:
+    case HTTP_EVENT_ON_FINISH:
+    case HTTP_EVENT_DISCONNECTED:
+        break;
+    default:
+        ESP_LOGW(TAG, "Unknown event: %d", event->event_id);
+    }
+    return ESP_OK;
+}
+
 static int check_update()
 {
-    int is_available = 1;
-
-    /*
+    int is_available = 0;
+    esp_err_t err;
     esp_http_client_handle_t client;
+    esp_http_client_config_t config = {
+        .url = CONFIG_PROJECT_LATEST_APP_AVAILABLE,
+        .cert_pem = (char *)ca_cert_ota_pem_start,
+        .event_handler = ota_http_event_handler,
+    };
+
+    ESP_LOGI(TAG, "Check if update should be performed at: %s", CONFIG_PROJECT_LATEST_APP_AVAILABLE);
     client = esp_http_client_init(&config);
-    */
+    err = esp_http_client_perform(client);
+
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "esp_http_client_perform(): %s", esp_err_to_name(err));
+        goto fail;
+    }
+    ESP_LOGI(TAG, "Status = %d, content_length = %d",
+             esp_http_client_get_status_code(client),
+             esp_http_client_get_content_length(client));
+    if (esp_http_client_get_status_code(client) == 200) {
+        is_available = 1;
+    }
+fail:
+    esp_http_client_cleanup(client);
     return is_available;
 }
 
@@ -228,6 +258,7 @@ static void ota_example_task(void *pvParameter)
         } else if (r == 0) {
             ESP_LOGI(TAG, "No update is available");
         } else {
+            ESP_LOGE(TAG, "BUG: check_update() returns unknown return code");
             goto fail;
         }
         vTaskDelay(UPDATE_CHECK_INTERVAL_SEC * 1000 / portTICK_PERIOD_MS);
