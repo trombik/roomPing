@@ -19,10 +19,11 @@
 
 #include "metric.h"
 
-#define N_TARGETS (2)
+#define N_TARGETS (3)
 const char targets[N_TARGETS][CONFIG_PROJECT_MAX_TARGET_STRING_SIZE] = {
     "8.8.8.8",
     "yahoo.co.jp",
+    "192.168.1.1"
 };
 
 #endif
