@@ -174,12 +174,16 @@ static void task_publish(void *pvParamters)
 
     ESP_LOGI(TAG, "Starting the loop");
     while (1) {
+        if (!xEventGroupWaitBits(mqtt_event_group, MQTT_CONNECTED_BIT, pdFALSE, pdFALSE, 1000)) {
+            goto sleep;
+        }
         if (xQueueReceive(queue_metric, &influx_metric, (TickType_t) 10 )) {
             printf("%s\n", influx_metric);
             if (mqtt_publish("influx", influx_metric) == 0) {
                 ESP_LOGE(TAG, "failed to publish");
             }
         }
+sleep:
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
