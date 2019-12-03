@@ -18,4 +18,7 @@ menu "Project configuration"
     config PROJECT_LATEST_APP_URL
         string "URL to the latest application"
         default "http://192.168.1.100/latest"
+    config PROJECT_METRIC_QUEUE_SIZE
+        int "Size of metric queue"
+        default 10
 endmenu

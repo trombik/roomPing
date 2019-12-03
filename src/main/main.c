@@ -178,7 +178,7 @@ void app_main()
     }
 
     ESP_LOGI(TAG, "Creating queue for metrics");
-    queue_metric = xQueueCreate(4, sizeof(influx_metric_t));
+    queue_metric = xQueueCreate(CONFIG_PROJECT_METRIC_QUEUE_SIZE, sizeof(influx_metric_t));
     if (queue_metric == 0) {
         ESP_LOGE(TAG, "xQueueCreate() failed");
         goto fail;

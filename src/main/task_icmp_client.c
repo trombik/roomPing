@@ -134,6 +134,10 @@ void task_icmp_client(void *pvParamters)
     struct icmp_metric m;
     int err;
     esp_ping_config_t config = ESP_PING_DEFAULT_CONFIG();
+
+    /* increase stack size to avoid stack overflow, the default is 2048 */
+    config.task_stack_size = 2048 * 2;
+
     esp_ping_callbacks_t callback = {
         .on_ping_end = icmp_callback_on_ping_end,
         .on_ping_success = icmp_callback_on_ping_success,
