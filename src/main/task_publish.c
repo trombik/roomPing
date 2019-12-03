@@ -151,7 +151,7 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
 
 static int mqtt_publish(const char *path, const char *value)
 {
-    const int qos = 1;
+    const int qos = CONFIG_PROJECT_MQTT_QOS;
     const int retain = 1;
     int length = 0;
     char topic[MAX_MQTT_TOPIC_LENGTH];
