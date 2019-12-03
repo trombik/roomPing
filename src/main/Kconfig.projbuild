@@ -21,4 +21,7 @@ menu "Project configuration"
     config PROJECT_METRIC_QUEUE_SIZE
         int "Size of metric queue"
         default 10
+    config PROJECT_MAX_TARGET_STRING_SIZE
+        int "Size of target host name"
+        default 32
 endmenu

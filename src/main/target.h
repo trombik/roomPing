@@ -20,7 +20,7 @@
 #include "metric.h"
 
 #define N_TARGETS (2)
-const char targets[N_TARGETS][MAX_TARGET_STRING_SIZE] = {
+const char targets[N_TARGETS][CONFIG_PROJECT_MAX_TARGET_STRING_SIZE] = {
     "8.8.8.8",
     "yahoo.co.jp",
 };
