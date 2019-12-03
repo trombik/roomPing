@@ -31,4 +31,7 @@ menu "Project configuration"
     config PROJECT_METRIC_QUEUE_SIZE
         int "Size of metric queue"
         default 10
+    config PROJECT_PING_INTERVAL_SEC
+        int "Ping test interval in sec"
+        default 300
 endmenu

@@ -77,7 +77,7 @@ static void icmp_callback_on_ping_end(esp_ping_handle_t handle, void *args)
      * but second-precision is good enough for this use case
      */
     snprintf(influx_line, sizeof(influx_line),
-             "%s, target_host=%s,target_addr=%s packet_loss=%d %ld000000000",
+             "%s,target_host=%s,target_addr=%s packet_loss=%d %ld000000000",
              metric_name,
              icmp_m->target,
              target_addr_str,
@@ -91,7 +91,7 @@ static void icmp_callback_on_ping_end(esp_ping_handle_t handle, void *args)
 
     /* average */
     snprintf(influx_line, sizeof(influx_line),
-             "%s, target_host=%s,target_addr=%s average=%d %ld000000000",
+             "%s,target_host=%s,target_addr=%s average=%d %ld000000000",
              metric_name,
              icmp_m->target,
              target_addr_str,
@@ -136,7 +136,8 @@ void task_icmp_client(void *pvParamters)
     esp_ping_config_t config = ESP_PING_DEFAULT_CONFIG();
 
     /* increase stack size to avoid stack overflow, the default is 2048 */
-    config.task_stack_size = 2048 * 2;
+    config.task_stack_size = 2048 * 3;
+    config.count = CONFIG_PROJECT_PING_COUNT;
 
     esp_ping_callbacks_t callback = {
         .on_ping_end = icmp_callback_on_ping_end,
@@ -145,8 +146,7 @@ void task_icmp_client(void *pvParamters)
         .cb_args = &m
     };
     esp_ping_handle_t ping;
-    const int interval_ms = 1000 * 60; // 1 minute
-    TickType_t interval_tick = pdMS_TO_TICKS(interval_ms);
+    TickType_t interval_tick = pdMS_TO_TICKS(CONFIG_PROJECT_PING_INTERVAL_SEC * 1000);
     TickType_t last_wakeup_time_in_tick;
 
     hostname = (char *)pvParamters;
