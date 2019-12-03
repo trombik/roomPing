@@ -34,4 +34,7 @@ menu "Project configuration"
     config PROJECT_PING_INTERVAL_SEC
         int "Ping test interval in sec"
         default 300
+    config PROJECT_PING_COUNT
+        int "Number of ICMP packets to send"
+        default 15
 endmenu
