@@ -29,7 +29,7 @@
 
 struct icmp_metric {
     ip_addr_t target_addr;
-    char target[MAX_TARGET_STRING_SIZE];
+    char target[CONFIG_PROJECT_MAX_TARGET_STRING_SIZE];
     uint32_t packet_lost;
     uint32_t packet_sent;
     uint32_t packet_recieved;
