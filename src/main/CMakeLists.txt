@@ -6,4 +6,5 @@ idf_component_register(SRCS "main.c"
                             "task_ota.c"
                             "util.c"
     EMBED_TXTFILES "cert.pem" "certs/ca_cert_ota.pem"
+    REQUIRES "esp32-homie" "nvs_flash" "mqtt" "esp_https_ota" "esp_wifi"
     INCLUDE_DIRS ".")
