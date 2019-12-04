@@ -132,10 +132,8 @@ free:
             data_text = NULL;
         }
         break;
-#if defined(CONFIG_IDF_TARGET_ESP32)
     case MQTT_EVENT_BEFORE_CONNECT:
         break;
-#endif
     default:
         ESP_LOGI(TAG_HANDLER, "unknown event: event id = %d", event->event_id);
         break;
