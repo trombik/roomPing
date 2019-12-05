@@ -23,6 +23,7 @@
 #include <esp_err.h>
 #include <esp_log.h>
 #include <mqtt_client.h>
+#include <homie.h>
 
 #include "task_publish.h"
 #include "metric.h"
@@ -43,109 +44,6 @@ extern EventGroupHandle_t s_wifi_event_group;
 EventGroupHandle_t mqtt_event_group;
 esp_mqtt_client_handle_t client;
 char device_id[] = "esp8266_001122334455";
-
-static esp_err_t mqtt_event_handler_cb(esp_mqtt_event_handle_t event)
-{
-    static char *data_text;
-    static char *topic;
-    switch (event->event_id) {
-    case MQTT_EVENT_CONNECTED:
-        ESP_LOGI(TAG_HANDLER, "MQTT_EVENT_CONNECTED");
-        xEventGroupSetBits(mqtt_event_group, MQTT_CONNECTED_BIT);
-        break;
-    case MQTT_EVENT_DISCONNECTED:
-        ESP_LOGI(TAG_HANDLER, "MQTT_EVENT_DISCONNECTED");
-        xEventGroupClearBits(mqtt_event_group, MQTT_CONNECTED_BIT);
-        break;
-    case MQTT_EVENT_PUBLISHED:
-        ESP_LOGI(TAG_HANDLER, "MQTT_EVENT_PUBLISHED");
-        break;
-    case MQTT_EVENT_ERROR:
-        ESP_LOGE(TAG_HANDLER, "MQTT_EVENT_ERROR");
-        break;
-    case MQTT_EVENT_SUBSCRIBED:
-        ESP_LOGI(TAG_HANDLER, "MQTT_EVENT_SUBSCRIBED");
-        break;
-    case MQTT_EVENT_UNSUBSCRIBED:
-        ESP_LOGI(TAG_HANDLER, "MQTT_EVENT_UNSUBSCRIBED");
-        break;
-    case MQTT_EVENT_DATA:
-        ESP_LOGI(TAG_HANDLER, "MQTT_EVENT_DATA");
-
-        /* the first event of data */
-        if (event->current_data_offset == 0) {
-            ESP_LOGD(TAG_HANDLER, "topic_len: %d total_data_len: %d",
-                     event->topic_len, event->total_data_len);
-
-            /* the first event that contains topic.
-             *
-             * event->topic and event->data are not null-terminated C
-             * string. allocate memory for topic_len + extra 1 byte for
-             * '\0'.
-             */
-            topic = malloc(event->topic_len + 1);
-            if (topic == NULL) {
-                ESP_LOGE(TAG_HANDLER, "failed to malloc() on topic");
-                break;
-            }
-            memset(topic, 0, 1);
-
-            /* ignore return value of strlcpy(). it is almost always more
-             * than event->topic_len + 1, as event->topic is not C string.
-             */
-            strlcpy(topic, event->topic, event->topic_len + 1);
-            ESP_LOGD(TAG_HANDLER, "topic: `%s`", topic);
-
-            data_text = malloc(event->total_data_len + 1);
-            if (data_text == NULL) {
-                ESP_LOGE(TAG_HANDLER, "failed to malloc(): topic `%s`",
-                         topic);
-                free(topic);
-                topic = NULL;
-                break;
-            }
-            memset(data_text, 0, 1);
-
-        }
-
-        /* the first and the rest of events */
-        if (topic == NULL || data_text == NULL) {
-
-            /* when something went wrong in parsing the first event,
-             * ignore the rest of the events
-             */
-            break;
-        }
-        strlcat(data_text, event->data, event->data_len + 1);
-
-        /* the last event */
-        if (event->current_data_offset + event->data_len >= event->total_data_len) {
-
-            if (topic == NULL || data_text == NULL) {
-                goto free;
-            }
-            ESP_LOGI(TAG_HANDLER, "topic: `%s` data: `%s`", topic, data_text);
-free:
-            free(topic);
-            topic = NULL;
-            free(data_text);
-            data_text = NULL;
-        }
-        break;
-    case MQTT_EVENT_BEFORE_CONNECT:
-        break;
-    default:
-        ESP_LOGI(TAG_HANDLER, "unknown event: event id = %d", event->event_id);
-        break;
-    }
-    return ESP_OK;
-}
-
-static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
-{
-    mqtt_event_handler_cb(event_data);
-}
-
 
 static int mqtt_publish(const char *path, const char *value)
 {
@@ -191,7 +89,6 @@ esp_err_t task_publish_start(void)
     esp_mqtt_transport_t proto;
     char topic_lwt[MAX_MQTT_TOPIC_LENGTH] = "";
     const char lwt_msg[] = "lost";
-    esp_err_t err;
     char mac_address[] = "00:00:00:00:00:00";
 
     ESP_ERROR_CHECK(get_mac_addr(mac_address, sizeof(mac_address)));
@@ -221,14 +118,27 @@ esp_err_t task_publish_start(void)
         ESP_LOGE(TAG, "Unknown URI: `%s`", CONFIG_PROJECT_MQTT_BROKER_URI);
         goto fail;
     }
-
-    esp_mqtt_client_config_t config = {
-        .uri = CONFIG_PROJECT_MQTT_BROKER_URI,
-        .lwt_topic = topic_lwt,
-        .lwt_msg = lwt_msg,
-        .lwt_retain = 1,
-        .lwt_qos = 1,
-        .lwt_msg_len = 4
+    /*
+        esp_mqtt_client_config_t config = {
+            .uri = CONFIG_PROJECT_MQTT_BROKER_URI,
+            .lwt_topic = topic_lwt,
+            .lwt_msg = lwt_msg,
+            .lwt_retain = 1,
+            .lwt_qos = 1,
+            .lwt_msg_len = 4
+        };
+    */
+    static homie_config_t homie_conf = {
+        .mqtt_uri = CONFIG_PROJECT_MQTT_BROKER_URI,
+        .mqtt_username = "",
+        .mqtt_password = "",
+        .device_name = "mydevice",
+        .base_topic = "homie",
+        .firmware_name = "myname",
+        .firmware_version = "0.1.0",
+        .ota_enabled = false,
+        .connected_handler = NULL,
+        .stack_size = configMINIMAL_STACK_SIZE * 8,
     };
 
     switch (proto) {
@@ -237,7 +147,7 @@ esp_err_t task_publish_start(void)
         break;
     case MQTT_TRANSPORT_OVER_WSS:
     case MQTT_TRANSPORT_OVER_SSL:
-        config.cert_pem = (const char *)cert_pem_start;
+        homie_conf.cert_pem = (const char *)cert_pem_start;
         break;
     default:
         ESP_LOGE(TAG, "Unknown MQTT_TRANSPORT_OVER_: %d", proto);
@@ -245,33 +155,35 @@ esp_err_t task_publish_start(void)
     }
 
     mqtt_event_group = xEventGroupCreate();
+    homie_conf.event_group = &mqtt_event_group;
     if (mqtt_event_group == NULL) {
         ESP_LOGE(TAG, "xEventGroupCreate() failed");
         goto fail;
     }
-
-    if ((client = esp_mqtt_client_init(&config)) == NULL) {
-        ESP_LOGE(TAG, "esp_mqtt_client_init() failed");
-        goto fail;
+    client = homie_init(&homie_conf);
+    if (client == NULL) {
+        ESP_LOGE(TAG, "homie_init() failed");
     }
-    if ((err = esp_mqtt_client_register_event(
-                   client,
-                   ESP_EVENT_ANY_ID,
-                   mqtt_event_handler,
-                   client)) != ESP_OK) {
-        ESP_LOGE(TAG, "esp_mqtt_client_register_event(): %s",
-                 esp_err_to_name(err));
-        goto fail;
-    }
+    /*
+        if ((client = esp_mqtt_client_init(&config)) == NULL) {
+            ESP_LOGE(TAG, "esp_mqtt_client_init() failed");
+            goto fail;
+        }
+        if ((err = esp_mqtt_client_register_event(
+                       client,
+                       ESP_EVENT_ANY_ID,
+                       mqtt_event_handler,
+                       client)) != ESP_OK) {
+            ESP_LOGE(TAG, "esp_mqtt_client_register_event(): %s",
+                     esp_err_to_name(err));
+            goto fail;
+        }
+    */
 
     while (1) {
         if (xEventGroupWaitBits(s_wifi_event_group, WIFI_CONNECTED_BIT, pdFALSE, pdFALSE, 1000)) {
             break;
         }
-    }
-    if ((err = esp_mqtt_client_start(client)) != ESP_OK) {
-        ESP_LOGE(TAG, "esp_mqtt_client_start() failed: %s", esp_err_to_name(err));
-        goto fail;
     }
     if (xTaskCreate(task_publish,
                     "task_publish",

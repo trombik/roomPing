@@ -13,6 +13,7 @@
 #include <esp_event.h>
 #include <esp_err.h>
 #include <esp_log.h>
+#include <mqtt_client.h>
 
 #define TAG "wifi_connect"
 #define MAXIMUM_RETRY 5
