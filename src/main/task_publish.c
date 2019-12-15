@@ -33,13 +33,19 @@
 #define TAG_HANDLER "mqtt_event_handler_cb"
 #define MAX_MQTT_TOPIC_LENGTH (256)
 #define MAX_INFLUX_LENGTH (1024)
+#define QOS_1 (1)
+#define RETAINED (1)
 
 extern QueueHandle_t queue_metric;
 static const char *TOPIC = CONFIG_PROJECT_MQTT_TOPIC;
 const int MQTT_CONNECTED_BIT = BIT0;
 extern int WIFI_CONNECTED_BIT;
-extern const uint8_t cert_pem_start[] asm("_binary_cert_pem_start");
-extern const uint8_t cert_pem_end[]   asm("_binary_cert_pem_end");
+
+extern const char cert_pem_start[] asm("_binary_cert_pem_start");
+extern const char cert_pem_end[]   asm("_binary_cert_pem_end");
+extern const char ca_cert_ota_pem_start[] asm("_binary_ca_cert_ota_pem_start");
+extern const char ca_cert_ota_pem_end[] asm("_binary_ca_cert_ota_pem_end");
+
 extern EventGroupHandle_t s_wifi_event_group;
 EventGroupHandle_t mqtt_event_group;
 esp_mqtt_client_handle_t client;
@@ -47,10 +53,8 @@ char device_id[] = "esp8266_001122334455";
 
 static int mqtt_publish(const char *path, const char *value)
 {
-    const int qos = CONFIG_PROJECT_MQTT_QOS;
-    const int retain = 1;
     int length = 0;
-    char topic[MAX_MQTT_TOPIC_LENGTH];
+    char topic[CONFIG_HOMIE_MAX_MQTT_TOPIC_LEN];
 
     if (snprintf(topic, sizeof(topic), "%s/%s/%s", TOPIC, device_id, path) >= sizeof(topic)) {
         ESP_LOGE(TAG, "the size of topic is too small (max %d), truncated", sizeof(topic));
@@ -60,8 +64,8 @@ static int mqtt_publish(const char *path, const char *value)
                topic,
                value,
                length,
-               qos,
-               retain);
+               QOS_1,
+               RETAINED);
 }
 
 static void task_publish(void *pvParamters)
@@ -86,108 +90,73 @@ sleep:
 
 esp_err_t task_publish_start(void)
 {
-    esp_mqtt_transport_t proto;
-    char topic_lwt[MAX_MQTT_TOPIC_LENGTH] = "";
-    const char lwt_msg[] = "lost";
     char mac_address[] = "00:00:00:00:00:00";
+    esp_err_t err;
 
-    ESP_ERROR_CHECK(get_mac_addr(mac_address, sizeof(mac_address)));
-    ESP_ERROR_CHECK(get_device_id(device_id, sizeof(device_id)));
-
-    /* XXX some homie controller, notably openhab2, does not allow arbitrary
-     * root topic. use "homie" as root.
-     */
-    if (snprintf(topic_lwt, sizeof(topic_lwt), "%s/%s/%s", TOPIC, device_id, "$state") >= sizeof(topic_lwt)) {
-        ESP_LOGE(TAG, "the size of topic_lwt is too small, truncated");
-    }
+    ESP_ERROR_CHECK(homie_get_mac(mac_address, sizeof(mac_address), true));
     printf("MAC address: %s\n", mac_address);
-    printf("MQTT device ID: %s\n", device_id);
-    printf("MQTT URI: %s\n", CONFIG_PROJECT_MQTT_BROKER_URI);
-    printf("MQTT LWT topic: %s\n", topic_lwt);
-    printf("MQTT LWT message: %s\n", lwt_msg);
 
-    if (strncasecmp(CONFIG_PROJECT_MQTT_BROKER_URI, "mqtts:", 6) == 0) {
-        proto = MQTT_TRANSPORT_OVER_SSL;
-    } else if (strncasecmp(CONFIG_PROJECT_MQTT_BROKER_URI, "mqtt:", 5) == 0) {
-        proto = MQTT_TRANSPORT_OVER_TCP;
-    } else if (strncasecmp(CONFIG_PROJECT_MQTT_BROKER_URI, "ws:", 3) == 0) {
-        proto = MQTT_TRANSPORT_OVER_WS;
-    } else if (strncasecmp(CONFIG_PROJECT_MQTT_BROKER_URI, "wss:", 4) == 0) {
-        proto = MQTT_TRANSPORT_OVER_WSS;
-    } else {
-        ESP_LOGE(TAG, "Unknown URI: `%s`", CONFIG_PROJECT_MQTT_BROKER_URI);
-        goto fail;
-    }
-    /*
-        esp_mqtt_client_config_t config = {
-            .uri = CONFIG_PROJECT_MQTT_BROKER_URI,
-            .lwt_topic = topic_lwt,
-            .lwt_msg = lwt_msg,
-            .lwt_retain = 1,
-            .lwt_qos = 1,
-            .lwt_msg_len = 4
-        };
-    */
-    static homie_config_t homie_conf = {
-        .mqtt_uri = CONFIG_PROJECT_MQTT_BROKER_URI,
-        .mqtt_username = "",
-        .mqtt_password = "",
-        .device_name = "mydevice",
-        .base_topic = "homie",
-        .firmware_name = "myname",
-        .firmware_version = "0.1.0",
-        .ota_enabled = false,
-        .connected_handler = NULL,
-        .stack_size = configMINIMAL_STACK_SIZE * 8,
+    static const esp_http_client_config_t http_config = {
+        .url = CONFIG_PROJECT_LATEST_APP_URL,
+        .cert_pem =  (const char *)ca_cert_ota_pem_start,
+    };
+    static const esp_mqtt_client_config_t mqtt_config = {
+        .client_id = "foo",
+        .username = "",
+        .password = "",
+        .uri = CONFIG_PROJECT_MQTT_BROKER_URI,
+        .task_stack = configMINIMAL_STACK_SIZE * 11,
+        .event_loop_handle = NULL,
+        .keepalive = 10,
+        .cert_pem = NULL,
     };
 
-    switch (proto) {
-    case MQTT_TRANSPORT_OVER_TCP:
-    case MQTT_TRANSPORT_OVER_WS:
-        break;
-    case MQTT_TRANSPORT_OVER_WSS:
-    case MQTT_TRANSPORT_OVER_SSL:
-        homie_conf.cert_pem = (const char *)cert_pem_start;
-        break;
-    default:
-        ESP_LOGE(TAG, "Unknown MQTT_TRANSPORT_OVER_: %d", proto);
-        goto fail;
-    }
-
+    ESP_LOGI(TAG, "Creating mqtt_event_group");
     mqtt_event_group = xEventGroupCreate();
-    homie_conf.event_group = &mqtt_event_group;
     if (mqtt_event_group == NULL) {
         ESP_LOGE(TAG, "xEventGroupCreate() failed");
         goto fail;
     }
-    client = homie_init(&homie_conf);
-    if (client == NULL) {
-        ESP_LOGE(TAG, "homie_init() failed");
-    }
-    /*
-        if ((client = esp_mqtt_client_init(&config)) == NULL) {
-            ESP_LOGE(TAG, "esp_mqtt_client_init() failed");
-            goto fail;
-        }
-        if ((err = esp_mqtt_client_register_event(
-                       client,
-                       ESP_EVENT_ANY_ID,
-                       mqtt_event_handler,
-                       client)) != ESP_OK) {
-            ESP_LOGE(TAG, "esp_mqtt_client_register_event(): %s",
-                     esp_err_to_name(err));
-            goto fail;
-        }
-    */
 
+    static homie_config_t homie_conf = {
+        .mqtt_config = mqtt_config,
+        .http_config = http_config,
+        .device_name = "mydevice",
+        .base_topic = "homie",
+        .firmware_name = "myname",
+        .firmware_version = "1",
+        .ota_enabled = true,
+        .reboot_enabled = true,
+        .init_handler = NULL,
+        .mqtt_handler = NULL,
+        .ota_status_handler = NULL,
+        .event_group = &mqtt_event_group,
+        .node_lists = "",
+    };
+
+    ESP_LOGI(TAG, "Wating for WIFI_CONNECTED_BIT");
     while (1) {
         if (xEventGroupWaitBits(s_wifi_event_group, WIFI_CONNECTED_BIT, pdFALSE, pdFALSE, 1000)) {
             break;
         }
     }
+
+    ESP_LOGI(TAG, "running homie_init()");
+    err = homie_init(&homie_conf);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "homie_init() failed");
+        goto fail;
+    }
+    ESP_LOGI(TAG, "running homie_run()");
+    client = homie_run();
+    if (client == NULL) {
+        ESP_LOGE(TAG, "homie_run()");
+        goto fail;
+    }
+    ESP_LOGI(TAG, "Creating task_publish()");
     if (xTaskCreate(task_publish,
                     "task_publish",
-                    configMINIMAL_STACK_SIZE * 10,
+                    configMINIMAL_STACK_SIZE * 20,
                     NULL,
                     5,
                     NULL) != pdPASS) {

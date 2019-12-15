@@ -31,7 +31,6 @@
 #include "sntp_connect.h"
 #include "task_icmp_client.h"
 #include "task_publish.h"
-#include "task_ota.h"
 #include "target.h"
 #include "metric.h"
 
@@ -169,13 +168,6 @@ void app_main()
         }
     }
     ESP_LOGI(TAG, "Configured time");
-
-    ESP_LOGI(TAG, "Starting OTA task");
-    err = task_ota_start();
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "task_ota_start() failed");
-        goto fail;
-    }
 
     ESP_LOGI(TAG, "Creating queue for metrics");
     queue_metric = xQueueCreate(CONFIG_PROJECT_METRIC_QUEUE_SIZE, sizeof(influx_metric_t));
