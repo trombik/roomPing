@@ -27,6 +27,9 @@ Any of `ESP32` development boards.
 `make menuconfig` has `Project configuration` menu to modify default
 configuration.
 
+See a list of configurations at
+[src/main/Kconfig.projbuild](src/main/Kconfig.projbuild).
+
 ### Targets
 
 A list of targets is defined in [`src/main/target.h`](src/main/target.h).
