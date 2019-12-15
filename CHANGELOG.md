@@ -1,3 +1,15 @@
+## Release 0.3.0
+
+* 4046520 doc: document use cases, required softwares
+* 5ad74f2 doc: document not-a-bug
+* 879854e bugfix: require users to create their own `target.h`
+* 0f5c491 doc: add a link to Kconfig
+* 79a4050 bugfix: introduce PROJECT_OTA_ENBALED and PROJECT_REBOOT_ENBALED
+* 0ac4e73 bugfix: remove magic numbers
+* f314ef1 bugfix: remove unused macro
+* c98fa64 bugfix: remove unused macro
+* 6e207b2 doc: remove statements which are not longer true
+
 ## Release 0.2.0
 
 * 5d354a9 doc: add build status
