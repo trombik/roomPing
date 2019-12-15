@@ -40,15 +40,19 @@ extern QueueHandle_t queue_metric;
 const int MQTT_CONNECTED_BIT = BIT0;
 extern int WIFI_CONNECTED_BIT;
 
+/* certificate for MQTT connection
+ * uncomment when the MQTT broker in the test environment supports TLS
 extern const char cert_pem_start[] asm("_binary_cert_pem_start");
 extern const char cert_pem_end[]   asm("_binary_cert_pem_end");
+*/
+
+/* certificate for HTTPS OTA */
 extern const char ca_cert_ota_pem_start[] asm("_binary_ca_cert_ota_pem_start");
 extern const char ca_cert_ota_pem_end[] asm("_binary_ca_cert_ota_pem_end");
 
 extern EventGroupHandle_t s_wifi_event_group;
 EventGroupHandle_t mqtt_event_group;
 esp_mqtt_client_handle_t client;
-char device_id[] = "esp8266_001122334455";
 
 static void task_publish(void *pvParamters)
 {
