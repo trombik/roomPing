@@ -30,9 +30,6 @@
 #include "util.h"
 
 #define TAG "task_publish"
-#define TAG_HANDLER "mqtt_event_handler_cb"
-#define MAX_MQTT_TOPIC_LENGTH (256)
-#define MAX_INFLUX_LENGTH (1024)
 #define QOS_1 (1)
 #define RETAINED (1)
 
