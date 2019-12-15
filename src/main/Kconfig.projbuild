@@ -34,7 +34,4 @@ menu "Project configuration"
     config PROJECT_PING_COUNT
         int "Number of ICMP packets to send"
         default 15
-    config PROJECT_MQTT_QOS
-        int "QoS"
-        default 1
 endmenu
