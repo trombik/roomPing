@@ -37,7 +37,6 @@
 #define RETAINED (1)
 
 extern QueueHandle_t queue_metric;
-static const char *TOPIC = CONFIG_PROJECT_MQTT_TOPIC;
 const int MQTT_CONNECTED_BIT = BIT0;
 extern int WIFI_CONNECTED_BIT;
 
@@ -51,23 +50,6 @@ EventGroupHandle_t mqtt_event_group;
 esp_mqtt_client_handle_t client;
 char device_id[] = "esp8266_001122334455";
 
-static int mqtt_publish(const char *path, const char *value)
-{
-    int length = 0;
-    char topic[CONFIG_HOMIE_MAX_MQTT_TOPIC_LEN];
-
-    if (snprintf(topic, sizeof(topic), "%s/%s/%s", TOPIC, device_id, path) >= sizeof(topic)) {
-        ESP_LOGE(TAG, "the size of topic is too small (max %d), truncated", sizeof(topic));
-    }
-    return esp_mqtt_client_publish(
-               client,
-               topic,
-               value,
-               length,
-               QOS_1,
-               RETAINED);
-}
-
 static void task_publish(void *pvParamters)
 {
     influx_metric_t influx_metric;
@@ -79,11 +61,29 @@ static void task_publish(void *pvParamters)
         }
         if (xQueueReceive(queue_metric, &influx_metric, (TickType_t) 10 )) {
             printf("%s\n", influx_metric);
-            if (mqtt_publish("influx", influx_metric) == 0) {
+            if (homie_publish("icmp/influx", QOS_1, RETAINED, influx_metric) <= 0) {
                 ESP_LOGE(TAG, "failed to publish");
             }
         }
     }
+}
+
+static void homie_init_handler()
+{
+    if (homie_publish("icmp/$name", QOS_1, RETAINED, "ICMP statics") <= 0) {
+        goto fail;
+    }
+    if (homie_publish("icmp/$properties", QOS_1, RETAINED, "influx") <= 0) {
+        goto fail;
+    }
+    if (homie_publish("icmp/influx/$name", QOS_1, RETAINED, "Statistics in influx line format") <= 0) {
+        goto fail;
+    }
+    if (homie_publish("icmp/influx/$datatype", QOS_1, RETAINED, "string") <= 0) {
+        goto fail;
+    }
+fail:
+    return;
 }
 
 esp_err_t task_publish_start(void)
@@ -125,7 +125,7 @@ esp_err_t task_publish_start(void)
         .firmware_version = "1",
         .ota_enabled = true,
         .reboot_enabled = true,
-        .init_handler = NULL,
+        .init_handler = homie_init_handler,
         .mqtt_handler = NULL,
         .ota_status_handler = NULL,
         .event_group = &mqtt_event_group,
