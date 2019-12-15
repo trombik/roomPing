@@ -35,18 +35,6 @@ Set `ESPPORT` to serial port of your device.
 export ESPPORT=/dev/ttyU0
 ```
 
-### `OTA` process
-
-1. The device check if it should update the firmware by requesting
-   `CONFIG_PROJECT_LATEST_APP_AVAILABLE`.
-2. If the status code of the request is 200, fetch a firmware at
-   `CONFIG_PROJECT_LATEST_APP_URL`. If not, sleep 60 sec.
-3. If the version of the fetched firmware is newer than the one of the running
-   firmware, start the `OTA` process. If not, sleep 60 sec.
-4. Repeat.
-
-`src/version.txt` contains version number.
-
 #### Generating self-signed certificates for HTTPS
 
 The `OTA` process fetches firmware over HTTPS. Create your own self-signed
@@ -148,81 +136,12 @@ not, update the firmware over USB serial.
 > $IDF_PATH/tools/idf.py flash
 ```
 
-#### Create a file to tell the device to update the firmware
-
-```
-> pwd
-/home/trombik/github/trombik/roomPing/src
-> touch update
-```
-
 #### Performing `OTA`
 
-1. Increment version number in `src/version.txt`
-2. Build the project as usual
-3. Wait for the device to update the firmware
+Make sure the version of the running firmware is older than the new firmware.
 
-An example log when newer version is available:
+Set run to `esp/ota/set`.
 
 ```
-...
-I (5997) task_ota: Fetching the update
-URL: https://192.168.1.54:8070/build/roomPing.bin
-...
-I (8727) task_ota: Writing to partition subtype 16 at offset 0x110000
-I (8727) task_ota: New firmware version: 2
-I (8727) task_ota: Running firmware version: 1
-I (10277) task_ota: esp_ota_begin succeeded
-...
-I (51107) task_ota: Connection closed
-I (51107) task_ota: Total Write binary data length: 846704
-I (51107) esp_image: segment 0: paddr=0x00110020 vaddr=0x3f400020 size=0x22e58 (142936) map
-I (51167) esp_image: segment 1: paddr=0x00132e80 vaddr=0x3ffb0000 size=0x03324 ( 13092)
-I (51177) esp_image: segment 2: paddr=0x001361ac vaddr=0x40080000 size=0x00400 (  1024)
-I (51177) esp_image: segment 3: paddr=0x001365b4 vaddr=0x40080400 size=0x09a64 ( 39524)
-I (51197) esp_image: segment 4: paddr=0x00140020 vaddr=0x400d0020 size=0x93558 (603480) map
-I (51407) esp_image: segment 5: paddr=0x001d3580 vaddr=0x40089e64 size=0x0b5cc ( 46540)
-I (51427) esp_image: segment 0: paddr=0x00110020 vaddr=0x3f400020 size=0x22e58 (142936) map
-I (51477) esp_image: segment 1: paddr=0x00132e80 vaddr=0x3ffb0000 size=0x03324 ( 13092)
-I (51477) esp_image: segment 2: paddr=0x001361ac vaddr=0x40080000 size=0x00400 (  1024)
-I (51477) esp_image: segment 3: paddr=0x001365b4 vaddr=0x40080400 size=0x09a64 ( 39524)
-I (51507) esp_image: segment 4: paddr=0x00140020 vaddr=0x400d0020 size=0x93558 (603480) map
-I (51707) esp_image: segment 5: paddr=0x001d3580 vaddr=0x40089e64 size=0x0b5cc ( 46540)
-I (51747) task_ota: Prepare to restart system!
-...
-
-ts Jun  8 2016 00:22:57
-rst:0xc (SW_CPU_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
-configsip: 0, SPIWP:0xee
-clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
-mode:DIO, clock div:2
-load:0x3fff0018,len:4
-load:0x3fff001c,len:7232
-ho 0 tail 12 room 4
-load:0x40078000,len:14176
-load:0x40080400,len:4480
-entry 0x400806f0
-I (75) boot: Chip Revision: 0
-I (34) boot: ESP-IDF v4.1-dev-1088-gb258fc376-dirty 2nd stage bootloader
-...
-
-```
-
-An example log when the running firmware version is same:
-
-```
-...
-I (6013) task_ota: Writing to partition subtype 17 at offset 0x210000
-I (6023) task_ota: New firmware version: 2
-I (6023) task_ota: Running firmware version: 2
-W (6023) task_ota: Current running version is the same as a new. We will not continue the update.
-...
-```
-
-#### Disable `OTA`
-
-```
-> pwd
-/home/trombik/github/trombik/roomPing/src
-> rm update
+> mosquitto_pub -h ip.add.re.ss -t 'homie/foo/esp/reboot/set' -m 'reboot'
 ```
