@@ -15,13 +15,6 @@ menu "Project configuration"
     config PROJECT_LATEST_APP_URL
         string "URL to the latest application"
         default "https://192.168.1.54:8070/build/roomPing.bin"
-    config PROJECT_LATEST_APP_AVAILABLE
-        string "URL to a file that indicates the device should try to update the firmware"
-        default "https://192.168.1.54:8070/update"
-        help
-            If HTTP response code of the request to this URL is 200, and
-            available firmware version is newer than the running firmware, the
-            device will install the new firmware.
     config PROJECT_MAX_TARGET_STRING_SIZE
         int "Max size of target hostname"
         default 32
