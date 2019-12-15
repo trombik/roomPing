@@ -133,7 +133,7 @@ esp_err_t task_publish_start(void)
         .mqtt_handler = NULL,
         .ota_status_handler = NULL,
         .event_group = &mqtt_event_group,
-        .node_lists = "",
+        .node_lists = "icmp",
     };
 
     ESP_LOGI(TAG, "Wating for WIFI_CONNECTED_BIT");
