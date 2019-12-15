@@ -1,5 +1,7 @@
 # `roomPing`
 
+[![Build Status](https://travis-ci.com/trombik/roomPing.svg?branch=master)](https://travis-ci.com/trombik/roomPing)
+
 `ICMP` _sensor_ on `ESP32`. The device periodically sends and receives `ICMP`
 packets to/from destinations. The result in `influx` line protocol format is
 published to `MQTT` broker. This is a project based on `esp-idf` SDK.
