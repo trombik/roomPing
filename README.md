@@ -12,6 +12,12 @@ published to `MQTT` broker. This is a project based on `esp-idf` SDK.
 * Publishes `RSSI`, uptime, free heap memory, under node `esp` (see
   [`trombik/esp32-homie`](https://github.com/trombik/esp32-homie))
 
+## Use cases
+
+You would like to know quality of WiFi at several rooms to improve the
+quality, and to see the trends of the qualities for diagnostics and/or
+improvements.
+
 ## NOT-BUGS
 
 The device is assumed to be powered by AC main. Thus, `deep-sleep` will not be
@@ -23,7 +29,25 @@ not save much, if not at all.
 
 Any of `ESP32` development boards.
 
+## Required software
+
+To achieve the goal of the use case, you need:
+
+* `esp-idf` and its tool-chains
+* An `ESP32` device
+* An `MQTT` broker ([mosquitto](https://mosquitto.org/))
+* An `MQTT` subscriber with influx line protocol support
+  ([telegraf](https://github.com/influxdata/telegraf))
+* A time series database ([influxdb](https://www.influxdata.com/))
+* A metric visualizer ([grafana](https://grafana.com/))
+* Optionally, a `Homie` controller ([openhab](https://www.openhab.org/)) to
+  manage devices
+
 ## Tested builds
+
+This project requires [ICMP Echo](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/protocols/icmp_echo.html)
+support in `esp-idf`. As of this writing, only `4.x` branch, or `master`,
+supports it.
 
 | `esp-idf` version | hardware  |
 |-------------------|-----------|
