@@ -27,4 +27,14 @@ menu "Project configuration"
     config PROJECT_PING_COUNT
         int "Number of ICMP packets to send"
         default 15
+    config PROJECT_OTA_ENABLED
+        bool "Enable OTA command"
+        default true
+        help
+            If selected, enable OTA command topic.
+    config PROJECT_REBOOT_ENABLED
+        bool "Enable reboot command"
+        default true
+        help
+            If selected, enable reboot command topic.
 endmenu
