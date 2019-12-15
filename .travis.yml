@@ -157,6 +157,7 @@ script:
     esac
 
     cd src
+    cp main/target.h.dist main/target.h
     make defconfig || exit 1
     ${PROJECT_BUILD_COMMAND} ${PROJECT_BUILD_COMMAND_ARG} >> ${PROJECT_LOG}
     if [ $? -ne 0 ]; then
