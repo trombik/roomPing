@@ -26,6 +26,7 @@
 #include "metric.h"
 
 #define TAG "task_icmp_client"
+#define ESP_PING_STACK_SIZE (configMINIMAL_STACK_SIZE * 11)
 
 struct icmp_metric {
     ip_addr_t target_addr;
@@ -136,7 +137,7 @@ void task_icmp_client(void *pvParamters)
     esp_ping_config_t config = ESP_PING_DEFAULT_CONFIG();
 
     /* increase stack size to avoid stack overflow, the default is 2048 */
-    config.task_stack_size = 2048 * 3;
+    config.task_stack_size = ESP_PING_STACK_SIZE;
     config.count = CONFIG_PROJECT_PING_COUNT;
 
     esp_ping_callbacks_t callback = {

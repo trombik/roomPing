@@ -21,6 +21,9 @@
 #include <esp_log.h>
 
 #define TAG "init_sntp"
+#define SNTP_TASK_WAIT_RETRY (10)
+#define SNTP_TASK_WAIT_DELAY (2000 / portTICK_PERIOD_MS)
+#define SNTP_TASK_HOSTNAME "pool.ntp.org"
 
 static void callback_time_sync_notification(struct timeval *tv)
 {
@@ -29,8 +32,8 @@ static void callback_time_sync_notification(struct timeval *tv)
 
 esp_err_t init_sntp(void)
 {
-    const int retry_count = 10;
-    const char server_name[] = "pool.ntp.org";
+    const int retry_count = SNTP_TASK_WAIT_RETRY;
+    const char server_name[] = SNTP_TASK_HOSTNAME;
     esp_err_t err = ESP_FAIL;
     int retry = 0;
     time_t now;
@@ -45,7 +48,7 @@ esp_err_t init_sntp(void)
 
     while (sntp_get_sync_status() == SNTP_SYNC_STATUS_RESET && ++retry < retry_count) {
         ESP_LOGI(TAG, "Waiting for system time to be set... (%d/%d)", retry, retry_count);
-        vTaskDelay(2000 / portTICK_PERIOD_MS);
+        vTaskDelay(SNTP_TASK_WAIT_DELAY);
     }
     if (retry >= retry_count) {
         err = ESP_ERR_TIMEOUT;

@@ -27,11 +27,18 @@
 
 #include "task_publish.h"
 #include "metric.h"
-#include "util.h"
 
 #define TAG "task_publish"
 #define QOS_1 (1)
 #define RETAINED (1)
+#define WIFI_CONNECTED_WAIT_TICK (1000 / portTICK_PERIOD_MS)
+#define NOT_WAIT_FOR_ALL_BITS pdFALSE
+#define NOT_CLEAR_ON_EXIT pdFALSE
+#define PUBLISH_TASK_STACK_SIZE (configMINIMAL_STACK_SIZE * 20)
+#define PUBLISH_TASK_PRIORITY (5)
+#define PUBLISH_TASK_QUEUE_RECEIVE_TICK (100 / portTICK_PERIOD_MS)
+#define MQTT_TASK_STACK_SIZE (configMINIMAL_STACK_SIZE * 11)
+#define MQTT_TASK_KEEPALIVE_SEC (30)
 
 extern QueueHandle_t queue_metric;
 const int MQTT_CONNECTED_BIT = BIT0;
@@ -57,10 +64,16 @@ static void task_publish(void *pvParamters)
 
     ESP_LOGI(TAG, "Starting the loop");
     while (1) {
-        if (!xEventGroupWaitBits(mqtt_event_group, MQTT_CONNECTED_BIT, pdFALSE, pdFALSE, 1000)) {
+        if (!xEventGroupWaitBits(mqtt_event_group,
+                                 MQTT_CONNECTED_BIT,
+                                 NOT_CLEAR_ON_EXIT,
+                                 NOT_WAIT_FOR_ALL_BITS,
+                                 WIFI_CONNECTED_WAIT_TICK)) {
             continue;
         }
-        if (xQueueReceive(queue_metric, &influx_metric, (TickType_t) 10 )) {
+        if (xQueueReceive(queue_metric,
+                          &influx_metric,
+                          PUBLISH_TASK_QUEUE_RECEIVE_TICK)) {
             printf("%s\n", influx_metric);
             if (homie_publish("icmp/influx", QOS_1, RETAINED, influx_metric) <= 0) {
                 ESP_LOGE(TAG, "failed to publish");
@@ -104,9 +117,9 @@ esp_err_t task_publish_start(void)
         .username = "",
         .password = "",
         .uri = CONFIG_PROJECT_MQTT_BROKER_URI,
-        .task_stack = configMINIMAL_STACK_SIZE * 11,
+        .task_stack = MQTT_TASK_STACK_SIZE,
         .event_loop_handle = NULL,
-        .keepalive = 10,
+        .keepalive = MQTT_TASK_KEEPALIVE_SEC,
         .cert_pem = NULL,
     };
 
@@ -135,7 +148,11 @@ esp_err_t task_publish_start(void)
 
     ESP_LOGI(TAG, "Wating for WIFI_CONNECTED_BIT");
     while (1) {
-        if (xEventGroupWaitBits(s_wifi_event_group, WIFI_CONNECTED_BIT, pdFALSE, pdFALSE, 1000)) {
+        if (xEventGroupWaitBits(s_wifi_event_group,
+                                WIFI_CONNECTED_BIT,
+                                NOT_CLEAR_ON_EXIT,
+                                NOT_WAIT_FOR_ALL_BITS,
+                                WIFI_CONNECTED_WAIT_TICK)) {
             break;
         }
     }
@@ -155,9 +172,9 @@ esp_err_t task_publish_start(void)
     ESP_LOGI(TAG, "Creating task_publish()");
     if (xTaskCreate(task_publish,
                     "task_publish",
-                    configMINIMAL_STACK_SIZE * 20,
+                    PUBLISH_TASK_STACK_SIZE,
                     NULL,
-                    5,
+                    PUBLISH_TASK_PRIORITY,
                     NULL) != pdPASS) {
         ESP_LOGE(TAG, "xTaskCreate() failed");
         goto fail;
