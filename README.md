@@ -12,6 +12,13 @@ published to `MQTT` broker. This is a project based on `esp-idf` SDK.
 * Publishes `RSSI`, uptime, free heap memory, under node `esp` (see
   [`trombik/esp32-homie`](https://github.com/trombik/esp32-homie))
 
+## NOT-BUGS
+
+The device is assumed to be powered by AC main. Thus, `deep-sleep` will not be
+implemented. Unlike temperature sensors, the longest interval is likely to be
+five minutes, usually one or two minutes. At this frequency, `deep-sleep` will
+not save much, if not at all.
+
 ## Required hardware
 
 Any of `ESP32` development boards.
@@ -42,7 +49,6 @@ A list of targets is defined in [`src/main/target.h.dist`](src/main/target.h.dis
 > cp main/target.h.dist main/target.h
 > $IDF_PATH/tools/idf.py menuconfig
 > $IDF_PATH/tools/idf.py build
-
 ```
 
 ## Example log outputs
