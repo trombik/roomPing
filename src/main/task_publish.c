@@ -40,6 +40,18 @@
 #define MQTT_TASK_STACK_SIZE (configMINIMAL_STACK_SIZE * 11)
 #define MQTT_TASK_KEEPALIVE_SEC (30)
 
+#if defined(CONFIG_PROJECT_OTA_ENABLED)
+#define PUBLISH_TASK_OTA_ENABLED true
+#else
+#define PUBLISH_TASK_OTA_ENABLED false
+#endif
+
+#if defined(CONFIG_PROJECT_REBOOT_ENABLED)
+#define PUBLISH_TASK_REBOOT_ENABLED true
+#else
+#define PUBLISH_TASK_REBOOT_ENABLED false
+#endif
+
 extern QueueHandle_t queue_metric;
 const int MQTT_CONNECTED_BIT = BIT0;
 extern int WIFI_CONNECTED_BIT;
@@ -137,8 +149,8 @@ esp_err_t task_publish_start(void)
         .base_topic = "homie",
         .firmware_name = "myname",
         .firmware_version = "1",
-        .ota_enabled = true,
-        .reboot_enabled = true,
+        .ota_enabled = PUBLISH_TASK_OTA_ENABLED,
+        .reboot_enabled = PUBLISH_TASK_REBOOT_ENABLED,
         .init_handler = homie_init_handler,
         .mqtt_handler = NULL,
         .ota_status_handler = NULL,
