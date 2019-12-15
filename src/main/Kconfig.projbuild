@@ -12,9 +12,6 @@ menu "Project configuration"
     config PROJECT_MQTT_BROKER_URI
         string "MQTT broaker URI"
         default "mqtt://test.mosquitto.org:1883"
-    config PROJECT_MQTT_TOPIC
-        string "MQTT topic"
-        default "mytopic"
     config PROJECT_LATEST_APP_URL
         string "URL to the latest application"
         default "https://192.168.1.54:8070/build/roomPing.bin"
