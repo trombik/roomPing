@@ -32,7 +32,18 @@ See a list of configurations at
 
 ### Targets
 
-A list of targets is defined in [`src/main/target.h`](src/main/target.h).
+A list of targets is defined in [`src/main/target.h.dist`](src/main/target.h.dist).
+
+## Building the project
+
+```
+> pwd
+/home/trombik/github/trombik/roomPing/src
+> cp main/target.h.dist main/target.h
+> $IDF_PATH/tools/idf.py menuconfig
+> $IDF_PATH/tools/idf.py build
+
+```
 
 ## Example log outputs
 
