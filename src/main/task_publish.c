@@ -72,8 +72,8 @@ esp_mqtt_client_handle_t client;
 
 const esp_mqtt_client_config_t mqtt_config = {
     .client_id = NULL,
-    .username = "",
-    .password = "",
+    .username = CONFIG_PROJECT_MQTT_USER,
+    .password = CONFIG_PROJECT_MQTT_PASSWORD,
     .uri = CONFIG_PROJECT_MQTT_BROKER_URI,
     .task_stack = MQTT_TASK_STACK_SIZE,
     .event_loop_handle = NULL,
