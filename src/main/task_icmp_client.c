@@ -27,6 +27,7 @@
 
 #define TAG "task_icmp_client"
 #define ESP_PING_STACK_SIZE (configMINIMAL_STACK_SIZE * 11)
+#define TARGET_ADDR_STR_LEN (64)
 
 struct icmp_metric {
     ip_addr_t target_addr;
@@ -42,6 +43,7 @@ extern QueueHandle_t queue_metric;
 
 static void icmp_callback_on_ping_end(esp_ping_handle_t handle, void *args)
 {
+    int ret;
     const char task_name[] = "on_ping_end";
     const char metric_name[] = "icmp";
     uint32_t transmitted;
@@ -49,7 +51,7 @@ static void icmp_callback_on_ping_end(esp_ping_handle_t handle, void *args)
     uint32_t total_time_ms;
     uint32_t loss;
     ip_addr_t target_addr;
-    char target_addr_str[64];
+    char target_addr_str[TARGET_ADDR_STR_LEN];
     influx_metric_t influx_line;
     struct icmp_metric *icmp_m;
 
@@ -61,9 +63,21 @@ static void icmp_callback_on_ping_end(esp_ping_handle_t handle, void *args)
     loss = (uint32_t)((1 - ((float)received) / transmitted) * 100);
 
     if (IP_IS_V4(&target_addr)) {
-        strncpy(target_addr_str, inet_ntoa(*ip_2_ip4(&target_addr)), sizeof(target_addr_str));
+        ret = strlcpy(target_addr_str, inet_ntoa(*ip_2_ip4(&target_addr)), sizeof(target_addr_str));
+        if (ret >= sizeof(target_addr_str)) {
+            ESP_LOGE(TAG, "target_addr_str is too short: sizeof(target_addr_str): %d, ret: %d",
+                     sizeof(target_addr_str),
+                     ret);
+            goto fail;
+        }
     } else if (IP_IS_V6(&target_addr)) {
-        strncpy(target_addr_str, inet6_ntoa(*ip_2_ip6(&target_addr)), sizeof(target_addr_str));
+        ret = strlcpy(target_addr_str, inet6_ntoa(*ip_2_ip6(&target_addr)), sizeof(target_addr_str));
+        if (ret >= sizeof(target_addr_str)) {
+            ESP_LOGE(TAG, "target_addr_str is too short: sizeof(target_addr_str): %d, ret: %d",
+                     sizeof(target_addr_str),
+                     ret);
+            goto fail;
+        }
     } else {
         ESP_LOGE(task_name, "target_addr is not IPv4 nor IPv6");
         goto fail;
@@ -172,7 +186,9 @@ void task_icmp_client(void *pvParamters)
     freeaddrinfo(res);
     config.target_addr = target_addr;
     m.target_addr = target_addr;
-    strlcpy(m.target, hostname, sizeof(m.target));
+    if (strlcpy(m.target, hostname, sizeof(m.target)) >= sizeof(m.target)) {
+        ESP_LOGW(TAG, "hostname is too long, truncated");
+    }
 
     ESP_LOGI(hostname, "Creating new ICMP session");
     ESP_ERROR_CHECK(esp_ping_new_session(&config, &callback, &ping));
