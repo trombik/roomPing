@@ -70,6 +70,38 @@ extern EventGroupHandle_t s_wifi_event_group;
 EventGroupHandle_t mqtt_event_group;
 esp_mqtt_client_handle_t client;
 
+const esp_mqtt_client_config_t mqtt_config = {
+    .client_id = NULL,
+    .username = "",
+    .password = "",
+    .uri = CONFIG_PROJECT_MQTT_BROKER_URI,
+    .task_stack = MQTT_TASK_STACK_SIZE,
+    .event_loop_handle = NULL,
+    .keepalive = MQTT_TASK_KEEPALIVE_SEC,
+    .cert_pem = NULL,
+};
+
+const esp_http_client_config_t http_config = {
+    .url = CONFIG_PROJECT_LATEST_APP_URL,
+    .cert_pem =  (const char *)ca_cert_ota_pem_start,
+};
+
+homie_config_t homie_conf = {
+    .mqtt_config = mqtt_config,
+    .http_config = http_config,
+    .device_name = "mydevice",
+    .base_topic = "", // set this later
+    .firmware_name = "myname",
+    .firmware_version = "1",
+    .ota_enabled = PUBLISH_TASK_OTA_ENABLED,
+    .reboot_enabled = PUBLISH_TASK_REBOOT_ENABLED,
+    .init_handler = NULL, // set this later
+    .mqtt_handler = NULL,
+    .ota_status_handler = NULL,
+    .event_group = NULL, // set this later
+    .node_lists = "icmp",
+};
+
 static void task_publish(void *pvParamters)
 {
     influx_metric_t influx_metric;
@@ -94,7 +126,7 @@ static void task_publish(void *pvParamters)
     }
 }
 
-static void homie_init_handler()
+static void init_handler()
 {
     if (homie_publish("icmp/$name", QOS_1, RETAINED, "ICMP statics") <= 0) {
         goto fail;
@@ -123,43 +155,15 @@ esp_err_t task_publish_start(void)
     ESP_ERROR_CHECK(homie_get_mac(mac_address, sizeof(mac_address), false));
     printf("MAC address: %s\n", nice_mac_address);
 
-    static const esp_http_client_config_t http_config = {
-        .url = CONFIG_PROJECT_LATEST_APP_URL,
-        .cert_pem =  (const char *)ca_cert_ota_pem_start,
-    };
-    static const esp_mqtt_client_config_t mqtt_config = {
-        .client_id = NULL,
-        .username = "",
-        .password = "",
-        .uri = CONFIG_PROJECT_MQTT_BROKER_URI,
-        .task_stack = MQTT_TASK_STACK_SIZE,
-        .event_loop_handle = NULL,
-        .keepalive = MQTT_TASK_KEEPALIVE_SEC,
-        .cert_pem = NULL,
-    };
-
     ESP_LOGI(TAG, "Creating mqtt_event_group");
     mqtt_event_group = xEventGroupCreate();
     if (mqtt_event_group == NULL) {
         ESP_LOGE(TAG, "xEventGroupCreate() failed");
         goto fail;
     }
+    homie_conf.event_group = &mqtt_event_group;
+    homie_conf.init_handler = init_handler;
 
-    static homie_config_t homie_conf = {
-        .mqtt_config = mqtt_config,
-        .http_config = http_config,
-        .device_name = "mydevice",
-        .base_topic = "", // set this later
-        .firmware_name = "myname",
-        .firmware_version = "1",
-        .ota_enabled = PUBLISH_TASK_OTA_ENABLED,
-        .reboot_enabled = PUBLISH_TASK_REBOOT_ENABLED,
-        .init_handler = homie_init_handler,
-        .mqtt_handler = NULL,
-        .ota_status_handler = NULL,
-        .event_group = &mqtt_event_group,
-        .node_lists = "icmp",
-    };
     ret = snprintf(homie_conf.base_topic, sizeof(homie_conf.base_topic), "homie/%s", mac_address);
     if (ret < 0 || ret >= sizeof(homie_conf.base_topic)) {
         ESP_LOGE(TAG, "mac_address is too long");
