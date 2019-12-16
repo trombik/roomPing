@@ -9,3 +9,4 @@ sdkconfig.old
 **/build
 src/update
 src/main/target.h
+src/main/certs/*/*.pem

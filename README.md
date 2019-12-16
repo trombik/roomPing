@@ -67,11 +67,54 @@ A list of targets is defined in [`src/main/target.h.dist`](src/main/target.h.dis
 
 ## Building the project
 
+### Creating `target.h`
+
+`target.h` is a header file to define a list of `ICMP` destinations.
+
 ```
 > pwd
 /home/trombik/github/trombik/roomPing/src
 > cp main/target.h.dist main/target.h
+```
+
+You may modify `targets` in `main/target.h`. `N_TARGETS` must be the length of
+`targets`.
+
+### Copying certificates (optional)
+
+Both `OTA` and `MQTT` supports TLS.
+
+Path to the certificate for `OTA` is `main/certs/ota/ota.pem`.
+
+```
+> pwd
+/home/trombik/github/trombik/roomPing/src
+> cp path/to/your/public/ota_certificate.pem main/certs/ota/ota.pem
+```
+
+Path to the certificate for `MQTT` is `main/certs/mqtt/mqtt.pem`.
+
+```
+> pwd
+/home/trombik/github/trombik/roomPing/src
+> cp path/to/your/public/mqtt_certificate.pem main/certs/mqtt/mqtt.pem
+```
+
+Note that you also need to set `CONFIG_PROJECT_TLS_*` in `menuconfig`.
+
+### Configuring the project
+
+Project configurations can be modified by `idf.py menuconfig`.
+
+```
 > $IDF_PATH/tools/idf.py menuconfig
+```
+
+### Building everything
+
+Finally, the build.
+
+```
 > $IDF_PATH/tools/idf.py build
 ```
 

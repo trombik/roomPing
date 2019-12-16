@@ -12,6 +12,16 @@ menu "Project configuration"
     config PROJECT_MQTT_BROKER_URI
         string "MQTT broaker URI"
         default "mqtt://test.mosquitto.org:1883"
+    config PROJECT_TLS_MQTT
+        bool "MQTT connection requires TLS"
+        default false
+        help
+            Select this if MQTT connection requires TLS.
+    config PROJECT_TLS_MQTT_NO_VERIFY
+        bool "Disable TLS verification in MQTT"
+        default false
+        help
+            If set to true, TLS verification will not be performed.
     config PROJECT_MQTT_USER
         string "MQTT user name"
         default ""
@@ -25,6 +35,16 @@ menu "Project configuration"
     config PROJECT_LATEST_APP_URL
         string "URL to the latest application"
         default "https://192.168.1.54:8070/build/roomPing.bin"
+    config PROJECT_TLS_OTA
+        bool "HTTP OTA requires TLS"
+        default true
+        help
+            Select this if HTTP OTA requires TLS.
+    config PROJECT_TLS_OTA_NO_VERIFY
+        bool "Disable TLS verification in OTA"
+        default false
+        help
+            If set to true, TLS verification will not be performed.
     config PROJECT_MAX_TARGET_STRING_SIZE
         int "Max size of target hostname"
         default 32
