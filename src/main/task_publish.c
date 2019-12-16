@@ -24,6 +24,9 @@
 #include <esp_log.h>
 #include <mqtt_client.h>
 #include <homie.h>
+#include <esp_partition.h>
+#include <esp_app_format.h>
+#include <esp_ota_ops.h>
 
 #include "task_publish.h"
 #include "metric.h"
@@ -89,10 +92,10 @@ const esp_http_client_config_t http_config = {
 homie_config_t homie_conf = {
     .mqtt_config = mqtt_config,
     .http_config = http_config,
-    .device_name = "mydevice",
+    .device_name = "roomPing",
     .base_topic = "", // set this later
-    .firmware_name = "myname",
-    .firmware_version = "1",
+    .firmware_name = "devel",
+    .firmware_version = "", // set this later
     .ota_enabled = PUBLISH_TASK_OTA_ENABLED,
     .reboot_enabled = PUBLISH_TASK_REBOOT_ENABLED,
     .init_handler = NULL, // set this later
@@ -144,12 +147,46 @@ fail:
     return;
 }
 
+/**
+ * @brief Get the version string of the running firmware.
+ *
+ * @param[out] buf Buffer to fill version string
+ * @param[in] len The size of the buffer
+ * @return ESP_OK on success, ESP_FAIL on failure
+ */
+static esp_err_t get_firmware_version(char *buf, size_t len)
+{
+    esp_err_t err;
+    esp_app_desc_t running_app_info;
+    const esp_partition_t *running = NULL;
+
+    running = esp_ota_get_running_partition();
+    if ((err = esp_ota_get_partition_description(running, &running_app_info)) == ESP_OK) {
+        if (strlcpy(buf, running_app_info.version, len) >= len) {
+            ESP_LOGE(TAG, "buf is too short: len %d", len);
+            err = ESP_FAIL;
+            goto fail;
+        }
+    } else {
+        ESP_LOGW(TAG, "esp_ota_get_partition_description(): %s", esp_err_to_name(err));
+        if (strlcpy(buf, "unknown", len) >= len) {
+            ESP_LOGE(TAG, "buf is too short: len %d", len);
+            err = ESP_FAIL;
+            goto fail;
+        }
+    }
+    err = ESP_OK;
+fail:
+    return err;
+}
+
 esp_err_t task_publish_start(void)
 {
     int ret;
     char nice_mac_address[] = "00:00:00:00:00:00";
     char mac_address[] = "aabbccddeeff";
     esp_err_t err;
+    char version[] = "111.222.333";
 
     ESP_ERROR_CHECK(homie_get_mac(nice_mac_address, sizeof(nice_mac_address), true));
     ESP_ERROR_CHECK(homie_get_mac(mac_address, sizeof(mac_address), false));
@@ -163,6 +200,14 @@ esp_err_t task_publish_start(void)
     }
     homie_conf.event_group = &mqtt_event_group;
     homie_conf.init_handler = init_handler;
+
+
+    ESP_ERROR_CHECK(get_firmware_version(version, sizeof(version)));
+    ret = strlcpy(homie_conf.firmware_version, version, sizeof(homie_conf.firmware_version));
+    if (ret >= sizeof(homie_conf.firmware_version)) {
+        ESP_LOGE(TAG, "version string is too long");
+        goto fail;
+    }
 
     ret = snprintf(homie_conf.base_topic, sizeof(homie_conf.base_topic), "homie/%s", mac_address);
     if (ret < 0 || ret >= sizeof(homie_conf.base_topic)) {
