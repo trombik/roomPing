@@ -114,18 +114,21 @@ fail:
 
 esp_err_t task_publish_start(void)
 {
-    char mac_address[] = "00:00:00:00:00:00";
+    int ret;
+    char nice_mac_address[] = "00:00:00:00:00:00";
+    char mac_address[] = "aabbccddeeff";
     esp_err_t err;
 
-    ESP_ERROR_CHECK(homie_get_mac(mac_address, sizeof(mac_address), true));
-    printf("MAC address: %s\n", mac_address);
+    ESP_ERROR_CHECK(homie_get_mac(nice_mac_address, sizeof(nice_mac_address), true));
+    ESP_ERROR_CHECK(homie_get_mac(mac_address, sizeof(mac_address), false));
+    printf("MAC address: %s\n", nice_mac_address);
 
     static const esp_http_client_config_t http_config = {
         .url = CONFIG_PROJECT_LATEST_APP_URL,
         .cert_pem =  (const char *)ca_cert_ota_pem_start,
     };
     static const esp_mqtt_client_config_t mqtt_config = {
-        .client_id = "foo",
+        .client_id = NULL,
         .username = "",
         .password = "",
         .uri = CONFIG_PROJECT_MQTT_BROKER_URI,
@@ -146,7 +149,7 @@ esp_err_t task_publish_start(void)
         .mqtt_config = mqtt_config,
         .http_config = http_config,
         .device_name = "mydevice",
-        .base_topic = "homie",
+        .base_topic = "", // set this later
         .firmware_name = "myname",
         .firmware_version = "1",
         .ota_enabled = PUBLISH_TASK_OTA_ENABLED,
@@ -157,6 +160,11 @@ esp_err_t task_publish_start(void)
         .event_group = &mqtt_event_group,
         .node_lists = "icmp",
     };
+    ret = snprintf(homie_conf.base_topic, sizeof(homie_conf.base_topic), "homie/%s", mac_address);
+    if (ret < 0 || ret >= sizeof(homie_conf.base_topic)) {
+        ESP_LOGE(TAG, "mac_address is too long");
+        goto fail;
+    }
 
     ESP_LOGI(TAG, "Wating for WIFI_CONNECTED_BIT");
     while (1) {
