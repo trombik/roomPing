@@ -3,7 +3,7 @@
 
 #include <lwip/netdb.h>
 
-#define METRIC_INFLUX_MAX_LEN (512)
+#define METRIC_INFLUX_MAX_LEN CONFIG_PROJECT_METRIC_INFLUX_MAX_LEN
 typedef char influx_metric_t[METRIC_INFLUX_MAX_LEN];
 
 #endif

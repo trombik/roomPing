@@ -91,13 +91,20 @@ static void icmp_callback_on_ping_end(esp_ping_handle_t handle, void *args)
      * influxdb requires nanosecond, or int64_t, for timestamp field.
      * but second-precision is good enough for this use case
      */
-    snprintf(influx_line, sizeof(influx_line),
-             "%s,target_host=%s,target_addr=%s packet_loss=%d %ld000000000",
-             metric_name,
-             icmp_m->target,
-             target_addr_str,
-             loss,
-             icmp_m->tv_sec);
+    ret = snprintf(influx_line, sizeof(influx_line),
+                   "%s,location=%s,target_host=%s,target_addr=%s packet_loss=%d %ld000000000",
+                   metric_name,
+                   CONFIG_PROJECT_DEVICE_LOCATION,
+                   icmp_m->target,
+                   target_addr_str,
+                   loss,
+                   icmp_m->tv_sec);
+    if (ret < 0 || ret >= sizeof(influx_line)) {
+        ESP_LOGE(task_name, "influx_line is too small: increase CONFIG_PROJECT_METRIC_INFLUX_MAX_LEN: ret: %d, influx_line: %d",
+                 ret,
+                 sizeof(influx_line));
+        goto fail;
+    }
 
     if (xQueueSend(queue_metric, &influx_line, (TickType_t) 0) != pdTRUE) {
         ESP_LOGW(task_name, "xQueueSend() failed");
@@ -105,13 +112,20 @@ static void icmp_callback_on_ping_end(esp_ping_handle_t handle, void *args)
     }
 
     /* average */
-    snprintf(influx_line, sizeof(influx_line),
-             "%s,target_host=%s,target_addr=%s average=%d %ld000000000",
-             metric_name,
-             icmp_m->target,
-             target_addr_str,
-             icmp_m->round_trip_average,
-             icmp_m->tv_sec);
+    ret = snprintf(influx_line, sizeof(influx_line),
+                   "%s,location=%s,target_host=%s,target_addr=%s average=%d %ld000000000",
+                   CONFIG_PROJECT_DEVICE_LOCATION,
+                   metric_name,
+                   icmp_m->target,
+                   target_addr_str,
+                   icmp_m->round_trip_average,
+                   icmp_m->tv_sec);
+    if (ret < 0 || ret >= sizeof(influx_line)) {
+        ESP_LOGE(task_name, "influx_line is too small: increase CONFIG_PROJECT_METRIC_INFLUX_MAX_LEN: ret: %d, influx_line: %d",
+                 ret,
+                 sizeof(influx_line));
+        goto fail;
+    }
     if (xQueueSend(queue_metric, &influx_line, (TickType_t) 0) != pdTRUE) {
         ESP_LOGW(task_name, "xQueueSend() failed");
         goto fail;
