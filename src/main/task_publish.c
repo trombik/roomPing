@@ -35,6 +35,7 @@
 #define QOS_1 (1)
 #define RETAINED (1)
 #define WIFI_CONNECTED_WAIT_TICK (1000 / portTICK_PERIOD_MS)
+#define MQTT_CONNECTED_WAIT_TICK (1000 / portTICK_PERIOD_MS)
 #define NOT_WAIT_FOR_ALL_BITS pdFALSE
 #define NOT_CLEAR_ON_EXIT pdFALSE
 #define PUBLISH_TASK_STACK_SIZE (configMINIMAL_STACK_SIZE * 20)
@@ -115,7 +116,7 @@ static void task_publish(void *pvParamters)
                                  MQTT_CONNECTED_BIT,
                                  NOT_CLEAR_ON_EXIT,
                                  NOT_WAIT_FOR_ALL_BITS,
-                                 WIFI_CONNECTED_WAIT_TICK)) {
+                                 MQTT_CONNECTED_WAIT_TICK)) {
             continue;
         }
         if (xQueueReceive(queue_metric,
