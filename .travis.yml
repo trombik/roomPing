@@ -157,7 +157,8 @@ script:
     esac
 
     cd src
-    cp main/target.h.dist main/target.h
+    cp main/target.h.dist main/target.h || exit 1
+    cp main/certs/ota/ota.pem.dist main/certs/ota/ota.pem || exit 1
     make defconfig || exit 1
     ${PROJECT_BUILD_COMMAND} ${PROJECT_BUILD_COMMAND_ARG} >> ${PROJECT_LOG}
     if [ $? -ne 0 ]; then

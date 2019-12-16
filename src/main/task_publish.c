@@ -60,15 +60,25 @@ extern QueueHandle_t queue_metric;
 const int MQTT_CONNECTED_BIT = BIT0;
 extern int WIFI_CONNECTED_BIT;
 
-/* certificate for MQTT connection
- * uncomment when the MQTT broker in the test environment supports TLS
-extern const char cert_pem_start[] asm("_binary_cert_pem_start");
-extern const char cert_pem_end[]   asm("_binary_cert_pem_end");
-*/
+/* certificate for MQTT connection */
+#if defined(CONFIG_PROJECT_TLS_MQTT) && !defined(CONFIG_PROJECT_TLS_MQTT_NO_VERIFY)
+
+/* XXX NOT _binary_certs_mqtt_mqtt_pem_start, but _binary_mqtt_pem_start.
+ *
+ * it is stated that "Characters /, ., etc. are replaced with underscores." at
+ * https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/build-system.html
+ *
+ * but path components to the file are ignored.
+ */
+extern const char cert_mqtt_pem_start[] asm("_binary_mqtt_pem_start");
+extern const char cert_mqtt_pem_end[]   asm("_binary_mqtt_pem_end");
+#endif
 
 /* certificate for HTTPS OTA */
-extern const char ca_cert_ota_pem_start[] asm("_binary_ca_cert_ota_pem_start");
-extern const char ca_cert_ota_pem_end[] asm("_binary_ca_cert_ota_pem_end");
+#if defined(CONFIG_PROJECT_TLS_OTA) && !defined(CONFIG_PROJECT_TLS_OTA_NO_VERIFY)
+extern const char cert_ota_pem_start[] asm("_binary_ota_pem_start");
+extern const char cert_ota_pem_end[]   asm("_binary_ota_pem_end");
+#endif
 
 extern EventGroupHandle_t s_wifi_event_group;
 EventGroupHandle_t mqtt_event_group;
@@ -82,12 +92,20 @@ const esp_mqtt_client_config_t mqtt_config = {
     .task_stack = MQTT_TASK_STACK_SIZE,
     .event_loop_handle = NULL,
     .keepalive = MQTT_TASK_KEEPALIVE_SEC,
+#if defined(CONFIG_PROJECT_TLS_MQTT) && !defined(CONFIG_PROJECT_TLS_MQTT_NO_VERIFY)
+    .cert_pem = (const char *)cert_mqtt_pem_start,
+#else
     .cert_pem = NULL,
+#endif
 };
 
 const esp_http_client_config_t http_config = {
     .url = CONFIG_PROJECT_LATEST_APP_URL,
-    .cert_pem =  (const char *)ca_cert_ota_pem_start,
+#if defined(CONFIG_PROJECT_TLS_OTA) && !defined(CONFIG_PROJECT_TLS_OTA_NO_VERIFY)
+    .cert_pem =  (const char *)cert_ota_pem_start,
+#else
+    .cert_pem = NULL,
+#endif
 };
 
 homie_config_t homie_conf = {
