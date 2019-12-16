@@ -45,6 +45,11 @@ menu "Project configuration"
         default false
         help
             If set to true, TLS verification will not be performed.
+    config PROJECT_SNTP_HOST
+        string "SNTP hostname"
+        default "pool.ntp.org"
+        help
+            SNTP server to sync time with.
     config PROJECT_MAX_TARGET_STRING_SIZE
         int "Max size of target hostname"
         default 32

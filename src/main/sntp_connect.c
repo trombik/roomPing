@@ -23,7 +23,7 @@
 #define TAG "init_sntp"
 #define SNTP_TASK_WAIT_RETRY (10)
 #define SNTP_TASK_WAIT_DELAY (2000 / portTICK_PERIOD_MS)
-#define SNTP_TASK_HOSTNAME "pool.ntp.org"
+#define SNTP_TASK_HOSTNAME  CONFIG_PROJECT_SNTP_HOST
 
 static void callback_time_sync_notification(struct timeval *tv)
 {
