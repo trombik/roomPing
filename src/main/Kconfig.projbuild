@@ -1,4 +1,11 @@
 menu "Project configuration"
+    config PROJECT_DEVICE_LOCATION
+        string "Location of the device"
+        default "somewhere"
+        help
+            Localtion of the device. Typically, room name, property's name, or
+            even country name. This value will be included in metrics so that
+            you can filter metrics by location.
     config PROJECT_WIFI_SSID
         string "WiFi SSID"
         default "myssid"
@@ -72,4 +79,9 @@ menu "Project configuration"
         default true
         help
             If selected, enable reboot command topic.
+    config PROJECT_METRIC_INFLUX_MAX_LEN
+        int "Max length of influx payload"
+        default 512
+        help
+            Max length of lnflux payload.
 endmenu
