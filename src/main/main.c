@@ -146,6 +146,7 @@ void app_main()
          * initialization to fail.  If this happens, we erase NVS partition
          * and initialize NVS again.
          */
+        ESP_LOGI(TAG, "Re-Initializing NVS");
         ESP_ERROR_CHECK(nvs_flash_erase());
         err = nvs_flash_init();
     }
