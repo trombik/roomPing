@@ -16,7 +16,7 @@
 #include <mqtt_client.h>
 
 #define TAG "wifi_connect"
-#define MAXIMUM_RETRY 5
+#define MAXIMUM_RETRY 10
 
 static int s_retry_num = 0;
 extern int WIFI_CONNECTED_BIT;
@@ -66,10 +66,6 @@ esp_err_t init_wifi()
         goto fail;
     }
 
-    if ((err = esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL)) != ESP_OK) {
-        ESP_LOGE(TAG, "esp_event_handler_register()");
-        goto fail;
-    }
     if ((err = esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL)) != ESP_OK) {
         ESP_LOGE(TAG, "esp_event_handler_register()");
         goto fail;
