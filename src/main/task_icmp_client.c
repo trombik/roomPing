@@ -114,8 +114,8 @@ static void icmp_callback_on_ping_end(esp_ping_handle_t handle, void *args)
     /* average */
     ret = snprintf(influx_line, sizeof(influx_line),
                    "%s,location=%s,target_host=%s,target_addr=%s average=%d %ld000000000",
-                   CONFIG_PROJECT_DEVICE_LOCATION,
                    metric_name,
+                   CONFIG_PROJECT_DEVICE_LOCATION,
                    icmp_m->target,
                    target_addr_str,
                    icmp_m->round_trip_average,
