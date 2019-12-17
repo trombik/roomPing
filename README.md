@@ -43,6 +43,10 @@ To achieve the goal of the use case, you need:
 * Optionally, a `Homie` controller ([openhab](https://www.openhab.org/)) to
   manage devices
 
+## Screenshots
+
+![demo][assets/demo.png]
+
 ## Tested builds
 
 This project requires [ICMP Echo](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/protocols/icmp_echo.html)
