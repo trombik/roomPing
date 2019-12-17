@@ -45,7 +45,7 @@ To achieve the goal of the use case, you need:
 
 ## Screenshots
 
-![demo][assets/demo.png]
+![demo](assets/demo.png)
 
 ## Tested builds
 
