@@ -34,11 +34,7 @@
 #include "target.h"
 #include "metric.h"
 
-#if !HELPER_TARGET_IS_ESP32
-#error The target must be ESP32
-#endif
-
-#if HELPER_TARGET_VERSION < HELPER_TARGET_VERSION_ESP32_V4
+#if HELPER_TARGET_IS_ESP32 && HELPER_TARGET_VERSION < HELPER_TARGET_VERSION_ESP32_V4
 #error esp-idf must be version 4.0 or newer
 #endif
 
@@ -54,6 +50,7 @@ static const char *TAG = "app_main";
 EventGroupHandle_t s_wifi_event_group;
 QueueHandle_t queue_metric;
 
+#if defined(CONFIG_IDF_TARGET_ESP32)
 static void print_sha256 (const uint8_t *image_hash, const char *label)
 {
     char hash_print[HASH_SHA256_LEN * 2 + 1];
@@ -125,6 +122,7 @@ static void test_firmware()
     }
     return;
 }
+#endif // defined(CONFIG_IDF_TARGET_ESP32)
 
 void app_main()
 {
@@ -134,12 +132,17 @@ void app_main()
     BaseType_t r;
     esp_err_t err;
 
+#if defined(CONFIG_IDF_TARGET_ESP32)
     show_digests();
     test_firmware();
-
+#endif // defined(CONFIG_IDF_TARGET_ESP32)
     ESP_LOGI(TAG, "Initializing NVS");
     err = nvs_flash_init();
+#if defined(CONFIG_IDF_TARGET_ESP32)
     if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+#elif defined(CONFIG_IDF_TARGET_ESP8266)
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES) {
+#endif // defined(CONFIG_IDF_TARGET_ESP32)
 
         /* OTA app partition table has a smaller NVS partition size than the
          * non-OTA partition table. This size mismatch may cause NVS

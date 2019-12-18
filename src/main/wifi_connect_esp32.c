@@ -15,7 +15,9 @@
 #include <esp_log.h>
 #include <mqtt_client.h>
 
-#define TAG "wifi_connect"
+#include "wifi_connect.h"
+
+#define TAG "wifi_connect_esp32"
 #define MAXIMUM_RETRY 10
 
 static int s_retry_num = 0;
