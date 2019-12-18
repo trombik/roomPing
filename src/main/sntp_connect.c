@@ -16,7 +16,13 @@
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+
+#if defined(CONFIG_IDF_TARGET_ESP8266)
+#include <lwip/apps/sntp.h>
+#elif defined(CONFIG_IDF_TARGET_ESP32)
 #include <esp_sntp.h>
+#endif
+
 #include <esp_err.h>
 #include <esp_log.h>
 
@@ -25,15 +31,26 @@
 #define SNTP_TASK_WAIT_DELAY (2000 / portTICK_PERIOD_MS)
 #define SNTP_TASK_HOSTNAME  CONFIG_PROJECT_SNTP_HOST
 
-static void callback_time_sync_notification(struct timeval *tv)
+static bool is_in_sync()
 {
-    ESP_LOGI(TAG, "Time has been synced");
+#if defined(CONFIG_IDF_TARGET_ESP32)
+    return (sntp_get_sync_status() == SNTP_SYNC_STATUS_RESET) ? true : false;
+#endif
+#if defined(CONFIG_IDF_TARGET_ESP8266)
+    time_t now = 0;
+    struct tm timeinfo = { 0 };
+    time(&now);
+    localtime_r(&now, &timeinfo);
+    return timeinfo.tm_year < (2016 - 1900) ? true : false;
+#endif
 }
 
 esp_err_t init_sntp(void)
 {
     const int retry_count = SNTP_TASK_WAIT_RETRY;
-    const char server_name[] = SNTP_TASK_HOSTNAME;
+
+    /* cannot use `cost` here. ESP8266 RTOS SDK does not have `const` */
+    char server_name[] = SNTP_TASK_HOSTNAME;
     esp_err_t err = ESP_FAIL;
     int retry = 0;
     time_t now;
@@ -43,10 +60,9 @@ esp_err_t init_sntp(void)
     ESP_LOGI(TAG, "Initializing SNTP: mode: POLL server: %s", server_name);
     sntp_setoperatingmode(SNTP_OPMODE_POLL);
     sntp_setservername(0, server_name);
-    sntp_set_time_sync_notification_cb(callback_time_sync_notification);
     sntp_init();
 
-    while (sntp_get_sync_status() == SNTP_SYNC_STATUS_RESET && ++retry < retry_count) {
+    while (is_in_sync() && ++retry < retry_count) {
         ESP_LOGI(TAG, "Waiting for system time to be set... (%d/%d)", retry, retry_count);
         vTaskDelay(SNTP_TASK_WAIT_DELAY);
     }
