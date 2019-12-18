@@ -31,7 +31,6 @@
 #include "sntp_connect.h"
 #include "task_icmp_client.h"
 #include "task_publish.h"
-#include "target.h"
 #include "metric.h"
 
 #if HELPER_TARGET_IS_ESP32 && HELPER_TARGET_VERSION < HELPER_TARGET_VERSION_ESP32_V4
@@ -39,8 +38,6 @@
 #endif
 
 #define HASH_SHA256_LEN (32)
-#define ICMP_TASK_STACK_SIZE (configMINIMAL_STACK_SIZE * 3)
-#define ICMP_TASK_PRIORITY (10)
 #define NOT_WAIT_FOR_ALL_BITS pdFALSE
 #define NOT_CLEAR_ON_EXIT pdFALSE
 #define WIFI_CONNECTED_WAIT_TICK (1000 / portTICK_PERIOD_MS)
@@ -195,16 +192,14 @@ void app_main()
     ESP_ERROR_CHECK(task_publish_start());
 
     ESP_LOGI(TAG, "Creating task_icmp_client");
-    for (int i = 0; i < N_TARGETS; i++) {
-        r = xTaskCreate(task_icmp_client, "task_icmp_client",
-                        ICMP_TASK_STACK_SIZE,
-                        (void *)targets[i],
-                        ICMP_TASK_PRIORITY,
-                        NULL);
-        if (r != pdPASS) {
-            ESP_LOGE(TAG, "failed to create task_icmp_client with target %s", targets[i]);
-            goto fail;
-        }
+    r = xTaskCreate(task_icmp_client, "task_icmp_client",
+                    configMINIMAL_STACK_SIZE * 3,
+                    NULL,
+                    5,
+                    NULL);
+    if (r != pdPASS) {
+        ESP_LOGE(TAG, "failed to create task_icmp_client");
+        goto fail;
     }
 
     return;

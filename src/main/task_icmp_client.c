@@ -14,19 +14,28 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <string.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/event_groups.h>
+#include <freertos/queue.h>
 #include <esp_err.h>
 #include <esp_log.h>
-#include <ping/ping_sock.h>
 #include <lwip/netdb.h>
-#include <string.h>
+
+#if defined(CONFIG_IDF_TARGET_ESP32)
+#include <ping/ping_sock.h>
+#elif defined(CONFIG_IDF_TARGET_ESP8266)
+#include <esp_ping.h>
+#endif
 
 #include "metric.h"
+#include "target.h"
 
 #define TAG "task_icmp_client"
 #define ESP_PING_STACK_SIZE (configMINIMAL_STACK_SIZE * 11)
+#define ICMP_TASK_STACK_SIZE (configMINIMAL_STACK_SIZE * 3)
+#define ICMP_TASK_PRIORITY (10)
 #define TARGET_ADDR_STR_LEN (64)
 
 struct icmp_metric {
@@ -154,7 +163,7 @@ static void icmp_callback_on_ping_timeout(esp_ping_handle_t hdl, void *args)
     return;
 }
 
-void task_icmp_client(void *pvParamters)
+void task_icmp(void *pvParamters)
 {
     char *hostname;
     ip_addr_t target_addr;
@@ -233,4 +242,47 @@ fail:
     ESP_LOGE(TAG, "Deleting the task");
     freeaddrinfo(res);
     vTaskDelete(NULL);
+}
+
+/**
+ * @brief start task_icmp for the given target
+ *
+ * @param target String of the target
+ * @return task handle of the task on success, NULL on failure
+ */
+static TaskHandle_t invoke_task_icmp(const char *target)
+{
+    TaskHandle_t handle = NULL;
+    BaseType_t r;
+    r = xTaskCreate(task_icmp,
+                    target,
+                    ICMP_TASK_STACK_SIZE,
+                    (void *)target,
+                    ICMP_TASK_PRIORITY,
+                    &handle);
+    if (r != pdPASS) {
+        ESP_LOGE(TAG, "failed to create task_icmp with target %s", target);
+        goto fail;
+    }
+fail:
+    return handle;
+}
+
+void task_icmp_client(void *pvParamters)
+{
+    TaskHandle_t task_handles[N_TARGETS] = {0};
+
+    for (int i = 0; i < N_TARGETS; i++) {
+        ESP_LOGI(TAG, "Starting task_icmp for %s", targets[i]);
+        task_handles[i] = invoke_task_icmp(targets[i]);
+    }
+    while (1) {
+        for (int i = 0; i < N_TARGETS; i++) {
+            if (task_handles[i] == NULL || eTaskGetState(task_handles[i]) == eDeleted) {
+                ESP_LOGI(TAG, "restarting task_icmp for target %s", targets[i]);
+                task_handles[i] = invoke_task_icmp(targets[i]);
+            }
+        }
+        vTaskDelay(1000 * 30 / portTICK_PERIOD_MS);
+    }
 }
