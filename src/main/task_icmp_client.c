@@ -25,9 +25,9 @@
 #include <string.h>
 
 #include "metric.h"
+#include "constant_task.h"
 
 #define TAG "task_icmp_client"
-#define ESP_PING_STACK_SIZE (configMINIMAL_STACK_SIZE * 11)
 #define TARGET_ADDR_STR_LEN (64)
 
 struct icmp_metric {

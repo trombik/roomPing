@@ -33,14 +33,13 @@
 #include "task_publish.h"
 #include "target.h"
 #include "metric.h"
+#include "constant_task.h"
 
 #if HELPER_TARGET_IS_ESP32 && HELPER_TARGET_VERSION < HELPER_TARGET_VERSION_ESP32_V4
 #error esp-idf must be version 4.0 or newer
 #endif
 
 #define HASH_SHA256_LEN (32)
-#define ICMP_TASK_STACK_SIZE (configMINIMAL_STACK_SIZE * 3)
-#define ICMP_TASK_PRIORITY (10)
 #define NOT_WAIT_FOR_ALL_BITS pdFALSE
 #define NOT_CLEAR_ON_EXIT pdFALSE
 #define WIFI_CONNECTED_WAIT_TICK (1000 / portTICK_PERIOD_MS)
