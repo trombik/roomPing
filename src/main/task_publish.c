@@ -32,6 +32,7 @@
 
 #include "task_publish.h"
 #include "metric.h"
+#include "constant_task.h"
 
 #define TAG "task_publish"
 #define QOS_1 (1)
@@ -40,10 +41,7 @@
 #define MQTT_CONNECTED_WAIT_TICK (1000 / portTICK_PERIOD_MS)
 #define NOT_WAIT_FOR_ALL_BITS pdFALSE
 #define NOT_CLEAR_ON_EXIT pdFALSE
-#define PUBLISH_TASK_STACK_SIZE (configMINIMAL_STACK_SIZE * 20)
-#define PUBLISH_TASK_PRIORITY (5)
 #define PUBLISH_TASK_QUEUE_RECEIVE_TICK (100 / portTICK_PERIOD_MS)
-#define MQTT_TASK_STACK_SIZE (configMINIMAL_STACK_SIZE * 11)
 #define MQTT_TASK_KEEPALIVE_SEC (30)
 
 #if defined(CONFIG_PROJECT_OTA_ENABLED)
