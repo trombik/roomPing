@@ -25,7 +25,9 @@
 #include <mqtt_client.h>
 #include <homie.h>
 #include <esp_partition.h>
+#if defined(CONFIG_IDF_TARGET_ESP32)
 #include <esp_app_format.h>
+#endif
 #include <esp_ota_ops.h>
 
 #include "task_publish.h"
@@ -90,7 +92,9 @@ const esp_mqtt_client_config_t mqtt_config = {
     .password = CONFIG_PROJECT_MQTT_PASSWORD,
     .uri = CONFIG_PROJECT_MQTT_BROKER_URI,
     .task_stack = MQTT_TASK_STACK_SIZE,
+#if defined(CONFIG_IDF_TARGET_ESP32)
     .event_loop_handle = NULL,
+#endif
     .keepalive = MQTT_TASK_KEEPALIVE_SEC,
 #if defined(CONFIG_PROJECT_TLS_MQTT) && !defined(CONFIG_PROJECT_TLS_MQTT_NO_VERIFY)
     .cert_pem = (const char *)cert_mqtt_pem_start,
@@ -109,8 +113,6 @@ const esp_http_client_config_t http_config = {
 };
 
 homie_config_t homie_conf = {
-    .mqtt_config = mqtt_config,
-    .http_config = http_config,
     .device_name = "roomPing",
     .base_topic = "", // set this later
     .firmware_name = "devel",
@@ -175,7 +177,8 @@ fail:
  */
 static esp_err_t get_firmware_version(char *buf, size_t len)
 {
-    esp_err_t err;
+    esp_err_t err = ESP_OK;
+#if defined(CONFIG_IDF_TARGET_ESP32)
     esp_app_desc_t running_app_info;
     const esp_partition_t *running = NULL;
 
@@ -194,8 +197,8 @@ static esp_err_t get_firmware_version(char *buf, size_t len)
             goto fail;
         }
     }
-    err = ESP_OK;
 fail:
+#endif
     return err;
 }
 
@@ -219,6 +222,8 @@ esp_err_t task_publish_start(void)
     }
     homie_conf.event_group = &mqtt_event_group;
     homie_conf.init_handler = init_handler;
+    homie_conf.mqtt_config = mqtt_config;
+    homie_conf.http_config = http_config;
 
 
     ESP_ERROR_CHECK(get_firmware_version(version, sizeof(version)));
