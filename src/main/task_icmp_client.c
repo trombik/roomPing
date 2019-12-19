@@ -17,6 +17,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/event_groups.h>
+#include <freertos/queue.h>
 #include <esp_err.h>
 #include <esp_log.h>
 #include <ping/ping_sock.h>
@@ -62,24 +63,11 @@ static void icmp_callback_on_ping_end(esp_ping_handle_t handle, void *args)
     esp_ping_get_profile(handle, ESP_PING_PROF_DURATION, &total_time_ms, sizeof(total_time_ms));
     loss = (uint32_t)((1 - ((float)received) / transmitted) * 100);
 
-    if (IP_IS_V4(&target_addr)) {
-        ret = strlcpy(target_addr_str, inet_ntoa(*ip_2_ip4(&target_addr)), sizeof(target_addr_str));
-        if (ret >= sizeof(target_addr_str)) {
-            ESP_LOGE(TAG, "target_addr_str is too short: sizeof(target_addr_str): %d, ret: %d",
-                     sizeof(target_addr_str),
-                     ret);
-            goto fail;
-        }
-    } else if (IP_IS_V6(&target_addr)) {
-        ret = strlcpy(target_addr_str, inet6_ntoa(*ip_2_ip6(&target_addr)), sizeof(target_addr_str));
-        if (ret >= sizeof(target_addr_str)) {
-            ESP_LOGE(TAG, "target_addr_str is too short: sizeof(target_addr_str): %d, ret: %d",
-                     sizeof(target_addr_str),
-                     ret);
-            goto fail;
-        }
-    } else {
-        ESP_LOGE(task_name, "target_addr is not IPv4 nor IPv6");
+    ret = strlcpy(target_addr_str, inet_ntoa(*ip_2_ip4(&target_addr)), sizeof(target_addr_str));
+    if (ret >= sizeof(target_addr_str)) {
+        ESP_LOGE(TAG, "target_addr_str is too short: sizeof(target_addr_str): %d, ret: %d",
+                 sizeof(target_addr_str),
+                 ret);
         goto fail;
     }
     printf("%s: ", target_addr_str);
