@@ -56,6 +56,7 @@ static void icmp_callback_on_ping_end(esp_ping_handle_t handle, void *args)
     influx_metric_t influx_line;
     struct icmp_metric *icmp_m;
 
+    ESP_LOGI(task_name, "icmp_callback_on_ping_end()");
     icmp_m = (struct icmp_metric *)args;
     esp_ping_get_profile(handle, ESP_PING_PROF_REQUEST, &transmitted, sizeof(transmitted));
     esp_ping_get_profile(handle, ESP_PING_PROF_REPLY, &received, sizeof(received));
