@@ -131,6 +131,14 @@ void app_main()
     BaseType_t r;
     esp_err_t err;
 
+    /* uncomment when you enable debug log
+    esp_log_level_set("*", ESP_LOG_INFO);
+    esp_log_level_set("MQTT_CLIENT", ESP_LOG_DEBUG);
+    esp_log_level_set("OUTBOX", ESP_LOG_DEBUG);
+    esp_log_level_set("HOMIE", ESP_LOG_DEBUG);
+    esp_log_level_set("HOMIE", ESP_LOG_DEBUG);
+    */
+
 #if defined(CONFIG_IDF_TARGET_ESP32)
     show_digests();
     test_firmware();
@@ -190,6 +198,7 @@ void app_main()
         goto fail;
     }
 
+
     ESP_LOGI(TAG, "Creating task_publish");
     ESP_ERROR_CHECK(task_publish_start());
 
@@ -205,7 +214,6 @@ void app_main()
             goto fail;
         }
     }
-
     return;
 fail:
     ESP_LOGE(TAG, "Critical error, aborting");
