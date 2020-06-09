@@ -35,6 +35,7 @@
 #include "constant_task.h"
 
 #define TAG "task_publish"
+#define QOS_0 (0)
 #define QOS_1 (1)
 #define RETAINED (1)
 #define WIFI_CONNECTED_WAIT_TICK (1000 / portTICK_PERIOD_MS)
@@ -127,24 +128,33 @@ homie_config_t homie_conf = {
 static void task_publish(void *pvParamters)
 {
     influx_metric_t influx_metric;
+    EventBits_t bits;
+    while (1) {
+        bits = xEventGroupWaitBits(mqtt_event_group,
+                             MQTT_CONNECTED_BIT,
+                             NOT_CLEAR_ON_EXIT,
+                             NOT_WAIT_FOR_ALL_BITS,
+                             MQTT_CONNECTED_WAIT_TICK);
+        if ((bits & MQTT_CONNECTED_BIT) == MQTT_CONNECTED_BIT) {
+            break;
+        } else {
+            ESP_LOGI(TAG, "Timeout");
+            vTaskDelay(1000 / portTICK_PERIOD_MS);
+            continue;
+        }
+    }
 
     ESP_LOGI(TAG, "Starting the loop");
     while (1) {
-        if (!xEventGroupWaitBits(mqtt_event_group,
-                                 MQTT_CONNECTED_BIT,
-                                 NOT_CLEAR_ON_EXIT,
-                                 NOT_WAIT_FOR_ALL_BITS,
-                                 MQTT_CONNECTED_WAIT_TICK)) {
-            continue;
-        }
         if (xQueueReceive(queue_metric,
                           &influx_metric,
-                          PUBLISH_TASK_QUEUE_RECEIVE_TICK)) {
+                          PUBLISH_TASK_QUEUE_RECEIVE_TICK) == pdPASS) {
             printf("%s\n", influx_metric);
             if (homie_publish("icmp/influx", QOS_1, RETAINED, influx_metric) <= 0) {
                 ESP_LOGE(TAG, "failed to publish");
             }
         }
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
 
