@@ -60,6 +60,7 @@ install:
       export PROJECT_GCC_PREFIX="xtensa-lx106-elf"
       export PROJECT_TOOLCHAIN_FILE="xtensa-lx106-elf-linux64-1.22.0-92-g8facf4c-5.2.0.tar.gz"
       export PROJECT_SDK_NAME="ESP8266_RTOS_SDK"
+      export SDKCONFIG_DEFAULTS="sdkconfig.defaults.esp8266"
       ;;
     esp32)
       export PROJECT_GCC_PREFIX="xtensa-esp32-elf"
