@@ -2,9 +2,10 @@
 
 [![Build Status](https://travis-ci.com/trombik/roomPing.svg?branch=master)](https://travis-ci.com/trombik/roomPing)
 
-`ICMP` _sensor_ on `ESP32`. The device periodically sends and receives `ICMP`
-packets to/from destinations. The result in `influx` line protocol format is
-published to `MQTT` broker. This is a project based on `esp-idf` SDK.
+`ICMP` _sensor_ on `ESP32` and `ESP8266` . The device periodically sends and
+receives `ICMP` packets to/from destinations. The result in `influx` line
+protocol format is published to `MQTT` broker. This is a project based on
+`esp-idf` SDK.
 
 ## Features
 
@@ -27,14 +28,14 @@ not save much, if not at all.
 
 ## Required hardware
 
-Any of `ESP32` development boards.
+Any of `ESP32` or `ESP8266` development boards.
 
 ## Required software
 
 To achieve the goal of the use case, you need:
 
 * `esp-idf` and its tool-chains
-* An `ESP32` device
+* An `ESP32` or `ESP8266` device
 * An `MQTT` broker ([mosquitto](https://mosquitto.org/))
 * An `MQTT` subscriber with influx line protocol support
   ([telegraf](https://github.com/influxdata/telegraf))
@@ -56,6 +57,7 @@ supports it.
 | `esp-idf` version | hardware  |
 |-------------------|-----------|
 | master branch     | `WROOM32` |
+| master branch (ESP8266 RTOS SDK)    | any ESP8266 |
 
 ## Project configuration
 
@@ -121,6 +123,11 @@ Finally, the build.
 ```
 > $IDF_PATH/tools/idf.py build
 ```
+
+## Known issues
+
+The project uses `esp32-homie`. [All the limitations of
+it](https://github.com/trombik/esp32-homie#known-bugs)  applies.
 
 ## Example log outputs
 
