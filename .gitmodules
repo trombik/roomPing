@@ -2,3 +2,6 @@
 	path = src/components/esp32-homie
 	url = https://github.com/trombik/esp32-homie.git
 	branch = event_group
+[submodule "src/components/esp-mqtt/esp-mqtt"]
+	path = src/components/esp-mqtt/esp-mqtt
+	url = https://github.com/espressif/esp-mqtt.git
