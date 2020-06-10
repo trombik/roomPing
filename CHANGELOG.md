@@ -1,3 +1,8 @@
+## Release 1.0.1
+
+* 3b9a29d bugfix: remove log
+* dbf9ab7 bugfix: increase stack for icmp task
+
 ## Release 0.3.0
 
 * 4046520 doc: document use cases, required softwares
