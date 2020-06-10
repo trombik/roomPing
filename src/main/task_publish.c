@@ -131,10 +131,10 @@ static void task_publish(void *pvParamters)
     EventBits_t bits;
     while (1) {
         bits = xEventGroupWaitBits(mqtt_event_group,
-                             MQTT_CONNECTED_BIT,
-                             NOT_CLEAR_ON_EXIT,
-                             NOT_WAIT_FOR_ALL_BITS,
-                             MQTT_CONNECTED_WAIT_TICK);
+                                   MQTT_CONNECTED_BIT,
+                                   NOT_CLEAR_ON_EXIT,
+                                   NOT_WAIT_FOR_ALL_BITS,
+                                   MQTT_CONNECTED_WAIT_TICK);
         if ((bits & MQTT_CONNECTED_BIT) == MQTT_CONNECTED_BIT) {
             break;
         } else {
