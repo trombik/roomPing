@@ -24,5 +24,5 @@ idf_component_register(SRCS "main.c"
                             "task_publish.c"
                             ${WIFI_CONNECT_SRCS}
     EMBED_TXTFILES ${CERTS}
-    REQUIRES "esp32-homie" "nvs_flash" "mqtt" "esp_https_ota" "esp_wifi"
+    REQUIRES "esp-homie" "nvs_flash" "mqtt" "esp_https_ota" "esp_wifi"
     INCLUDE_DIRS ".")
