@@ -32,6 +32,10 @@ Any of `ESP32` or `ESP8266` development boards.
 
 ## Hardware notes
 
+### ESP8266
+
+On ESP8266, the application _generally_ works, but it occasionally crashes.
+
 ### `ESP-01` and its variants
 
 `ESP-01` is not very user friendly. If you are not familiar with it, you
