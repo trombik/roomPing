@@ -34,6 +34,13 @@ Any of `ESP32` or `ESP8266` development boards.
 
 ### ESP8266
 
+The latest `esp-mqtt` is used instead of the bundled `mqtt`. Define
+`PROJECT_TARGET="esp8266"` to build the application with `esp-mqtt`.
+
+```console
+make all PROJECT_TARGET="esp8266"
+```
+
 On ESP8266, the application _generally_ works, but it occasionally crashes.
 
 ### `ESP-01` and its variants
