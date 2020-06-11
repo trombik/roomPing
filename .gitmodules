@@ -1,3 +1,6 @@
 [submodule "src/components/esp-mqtt/esp-mqtt"]
 	path = src/components/esp-mqtt/esp-mqtt
 	url = https://github.com/espressif/esp-mqtt.git
+[submodule "src/components/esp-homie"]
+	path = src/components/esp-homie
+	url = https://github.com/trombik/esp-homie
