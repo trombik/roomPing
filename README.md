@@ -30,6 +30,78 @@ not save much, if not at all.
 
 Any of `ESP32` or `ESP8266` development boards.
 
+## Hardware notes
+
+### ESP8266
+
+The latest `esp-mqtt` is used instead of the bundled `mqtt`. Define
+`PROJECT_TARGET="esp8266"` to build the application with `esp-mqtt`.
+
+```console
+make all PROJECT_TARGET="esp8266"
+```
+
+On ESP8266, the application _generally_ works, but it occasionally crashes.
+
+### `ESP-01` and its variants
+
+`ESP-01` is not very user friendly. If you are not familiar with it, you
+should start with a generic `ESP8266` development board, such as `NodeMCU`
+and its clones.
+
+Pin configuration is:
+
+- VCC -> 3.3V
+- GND -> GND
+- GPIO 0 -> GND when uploading, floating (unconnected) when running
+- GPIO 2 -> floating (unconnected)
+- RST -> pull up to VCC through 10K register
+- CHPD -> pull up to VCC through 10K register
+- RXD -> TX of serial converter
+- TXD -> RX of serial converter
+
+`ESP-01` and its variants, including `ESP-05`, `ESP-12`, need additional
+non-default `sdkconfig` options. Use `make menuconfig` to change them.
+
+Make sure to set correct flash size. `Serial flasher config` -> `Flash size`.
+Usually, it's 1 MB, but not always.
+
+Make sure to set correct `Flash SPI mode`. `Serial flasher config` -> `Flash
+SPI mode`. Usually, it's either `DIO` or `DOUT`, but not always.
+
+Make sure to set `Partition Table` to `Single factory app, no OTA`. `Partition
+Table` -> `Partition Table`.
+
+In addition to all ESP8266 specific options, you need something like the
+following in `sdkconfig`.
+
+```make
+CONFIG_ESPTOOLPY_FLASHSIZE="1MB"
+CONFIG_ESPTOOLPY_FLASHMODE_DOUT=y
+CONFIG_PARTITION_TABLE_SINGLE_APP=y
+```
+
+Typical log when you CAN upload the application but `ESP-01` refuses to work
+looks like below:
+
+```console
+ ets Jan  8 2013,rst cause:2, boot mode:(3,7)
+
+load 0x40100000, len 7572, room 16
+tail 4
+chksum 0xef
+load 0x00000000, len 0, room 4
+tail 0
+chksum 0xef
+ho 12 tail 0 room 4
+load 0x00000000, len 0, room 12
+tail 0
+chksum 0xef
+csum 0xef
+csum err
+ets_main.c ~
+```
+
 ## Required software
 
 To achieve the goal of the use case, you need:
