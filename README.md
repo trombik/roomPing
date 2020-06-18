@@ -146,6 +146,9 @@ configuration.
 See a list of configurations at
 [src/main/Kconfig.projbuild](src/main/Kconfig.projbuild).
 
+Device location can be set by setting `CONFIG_HOMIE_LOCATION` under `Component
+config` -> `Homie HTTP client` -> `the location of the device`.
+
 ### Targets
 
 A list of targets is defined in [`src/main/target.h.dist`](src/main/target.h.dist).
