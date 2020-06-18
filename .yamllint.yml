@@ -1,0 +1,16 @@
+---
+extends: default
+
+rules:
+  truthy: disable
+  # disable line-length because you cannot break lines in some language, e.g.
+  # Japanese
+  line-length: disable
+
+ignore: |
+  vendor
+  node_modules
+  .bundle
+  _site
+  src/build
+  src/components
