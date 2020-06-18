@@ -9,8 +9,6 @@ cache:
     - ${HOME}/distfiles
     - ${HOME}/.ccache
     - ${HOME}/.cache/pip
-os:
-  - linux
 
 matrix:
   include:
