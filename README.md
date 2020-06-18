@@ -9,9 +9,10 @@ protocol format is published to `MQTT` broker. This is a project based on
 
 ## Features
 
+* Periodically `ping` defined targets, publish results via MQTT
 * Support Homie 4.x
 * Publishes `RSSI`, uptime, free heap memory, under node `esp` (see
-  [`trombik/esp32-homie`](https://github.com/trombik/esp32-homie))
+  [`trombik/esp-homie`](https://github.com/trombik/esp-homie))
 
 ## Use cases
 
@@ -41,13 +42,17 @@ The latest `esp-mqtt` is used instead of the bundled `mqtt`. Define
 make all PROJECT_TARGET="esp8266"
 ```
 
-On ESP8266, the application _generally_ works, but it occasionally crashes.
+On ESP8266, the application _generally_ works, but it occasionally crashes
+when built with `mqtt`.
 
 ### `ESP-01` and its variants
 
 `ESP-01` is not very user friendly. If you are not familiar with it, you
 should start with a generic `ESP8266` development board, such as `NodeMCU`
 and its clones.
+
+Power is critically important. Make sure 3.3V is stable and stiff enough. This
+is especially true when the device needs full WiFi calibration.
 
 Pin configuration is:
 
@@ -110,11 +115,13 @@ To achieve the goal of the use case, you need:
 * An `ESP32` or `ESP8266` device
 * An `MQTT` broker ([mosquitto](https://mosquitto.org/))
 * An `MQTT` subscriber with influx line protocol support
-  ([telegraf](https://github.com/influxdata/telegraf))
+  ([telegraf](https://github.com/influxdata/telegraf)) and/or my
+  [`trombik/mqtt-influxdb-translator`](https://github.com/trombik/mqtt-influxdb-translator).
 * A time series database ([influxdb](https://www.influxdata.com/))
 * A metric visualizer ([grafana](https://grafana.com/))
-* Optionally, a `Homie` controller ([openhab](https://www.openhab.org/)) to
-  manage devices
+
+Note that `telegraf` does support MQTT natively, it does NOT support
+translating MQTT values to `influxdb` line protocol format.
 
 ## Screenshots
 
