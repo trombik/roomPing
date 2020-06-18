@@ -1,17 +1,4 @@
 menu "Project configuration"
-    config PROJECT_DEVICE_LOCATION
-        string "Location of the device"
-        default "somewhere"
-        help
-            Localtion of the device. Typically, room name, property's name, or
-            even country name. This value will be included in metrics so that
-            you can filter metrics by location.
-
-            You are advised to use a value without spaces, or special
-            characters in influxdb line protocol. Use a simple value like:
-            foo-bar-123
-
-            https://docs.influxdata.com/influxdb/v1.7/write_protocols/line_protocol_reference/
     config PROJECT_WIFI_SSID
         string "WiFi SSID"
         default "myssid"
