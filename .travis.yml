@@ -1,4 +1,5 @@
-sudo: false
+---
+os: linux
 language: bash
 
 # when you suspects issues in cache, use the following line to disable cache.
@@ -21,17 +22,17 @@ matrix:
     # in the latest ESP8266 RTOS SDK (3.2), idf.py is included but not
     # officially supported by espressif.
     - env:
-      - PROJECT_TARGET="esp32"
-      - PROJECT_SDK_BRANCH="master"
-      - PROJECT_BUILD_METHOD="make"
+        - PROJECT_TARGET="esp32"
+        - PROJECT_SDK_BRANCH="master"
+        - PROJECT_BUILD_METHOD="make"
     - env:
-      - PROJECT_TARGET="esp32"
-      - PROJECT_SDK_BRANCH="master"
-      - PROJECT_BUILD_METHOD="idf"
+        - PROJECT_TARGET="esp32"
+        - PROJECT_SDK_BRANCH="master"
+        - PROJECT_BUILD_METHOD="idf"
     - env:
-      - PROJECT_TARGET="esp8266"
-      - PROJECT_SDK_BRANCH="master"
-      - PROJECT_BUILD_METHOD="make"
+        - PROJECT_TARGET="esp8266"
+        - PROJECT_SDK_BRANCH="master"
+        - PROJECT_BUILD_METHOD="make"
 
 addons:
   apt:
