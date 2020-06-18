@@ -1,6 +1,6 @@
-## Development
+# Development
 
-### Required applications
+## Required applications
 
 * `git`
 * `openssl`
@@ -8,9 +8,9 @@
 * `esp-idf` and its tool-chains installed
 * `astyle` (optional)
 
-### Environment variables
+## Environment variables
 
-#### `IDF_PATH`
+### `IDF_PATH`
 
 `IDF_PATH` must be path to `esp-idf` directory.
 
@@ -18,7 +18,7 @@
 export IDF_PATH=~/github/trombik/esp-idf
 ```
 
-#### `PATH`
+### `PATH`
 
 `PATH` must include path to the tool-chain `bin` directory, where
 `xtensa-esp32-elf-gcc` and others are.
@@ -27,7 +27,7 @@ export IDF_PATH=~/github/trombik/esp-idf
 export PATH="/usr/local/xtensa-esp32-elf/bin:$PATH"
 ```
 
-#### `ESPPORT`
+### `ESPPORT`
 
 Set `ESPPORT` to serial port of your device.
 
@@ -35,7 +35,7 @@ Set `ESPPORT` to serial port of your device.
 export ESPPORT=/dev/ttyU0
 ```
 
-#### Generating self-signed certificates for HTTPS
+## Generating self-signed certificates for HTTPS
 
 The `OTA` process fetches firmware over HTTPS. Create your own self-signed
 certificates.
@@ -77,7 +77,7 @@ Copy the keys.
 > cp ca_cert.pem src/main/certs/ca_cert_ota.pem
 ```
 
-#### Set `PROJECT_LATEST_APP_URL`
+### Set `PROJECT_LATEST_APP_URL`
 
 Navigate to `Project configuration` -> `URL to the latest application`. Set
 the value to: `https://ip.add.re.ss:8070/build/roomPing.bin`.
@@ -89,7 +89,7 @@ machine.
 > $IDF_PATH/tools/idf.py menuconfig
 ```
 
-#### Running HTTPS server on the local machine
+### Running HTTPS server on the local machine
 
 Run HTTPS server. Do NOT use `openssl s_server -HTTP`. You should use a
 full-fledged HTTPS server, such as `nginx`, to avoid weird issues.  An example
@@ -120,7 +120,7 @@ fetch: https://192.168.1.54:8070/build/roomPing.bin: size of remote file is not 
 roomPing.bin                                           826 kB  443 MBps    00s
 ```
 
-#### Building the latest firmware and flashing it
+### Building the latest firmware and flashing it
 
 To perform `OTA`, the firmware on the device must be newer than `FIXME`. If
 not, update the firmware over USB serial.
@@ -132,7 +132,7 @@ not, update the firmware over USB serial.
 > $IDF_PATH/tools/idf.py flash
 ```
 
-#### Performing `OTA`
+### Performing `OTA`
 
 Make sure the version of the running firmware is older than the new firmware.
 
