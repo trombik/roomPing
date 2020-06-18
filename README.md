@@ -9,9 +9,9 @@ protocol format is published to `MQTT` broker. This is a project based on
 
 ## Features
 
-* Periodically `ping` defined targets, publish results via MQTT
-* Support Homie 4.x
-* Publishes `RSSI`, uptime, free heap memory, under node `esp` (see
+- Periodically `ping` defined targets, publish results via MQTT
+- Support Homie 4.x
+- Publishes `RSSI`, uptime, free heap memory, under node `esp` (see
   [`trombik/esp-homie`](https://github.com/trombik/esp-homie))
 
 ## Use cases
@@ -111,14 +111,14 @@ ets_main.c ~
 
 To achieve the goal of the use case, you need:
 
-* `esp-idf` and its tool-chains
-* An `ESP32` or `ESP8266` device
-* An `MQTT` broker ([mosquitto](https://mosquitto.org/))
-* An `MQTT` subscriber with influx line protocol support
+- `esp-idf` and its tool-chains
+- An `ESP32` or `ESP8266` device
+- An `MQTT` broker ([mosquitto](https://mosquitto.org/))
+- An `MQTT` subscriber with influx line protocol support
   ([telegraf](https://github.com/influxdata/telegraf)) and/or my
   [`trombik/mqtt-influxdb-translator`](https://github.com/trombik/mqtt-influxdb-translator).
-* A time series database ([influxdb](https://www.influxdata.com/))
-* A metric visualizer ([grafana](https://grafana.com/))
+- A time series database ([influxdb](https://www.influxdata.com/))
+- A metric visualizer ([grafana](https://grafana.com/))
 
 Note that `telegraf` does support MQTT natively, it does NOT support
 translating MQTT values to `influxdb` line protocol format.
@@ -159,7 +159,7 @@ A list of targets is defined in [`src/main/target.h.dist`](src/main/target.h.dis
 
 `target.h` is a header file to define a list of `ICMP` destinations.
 
-```
+```console
 > pwd
 /home/trombik/github/trombik/roomPing/src
 > cp main/target.h.dist main/target.h
@@ -174,7 +174,7 @@ Both `OTA` and `MQTT` supports TLS.
 
 Path to the certificate for `OTA` is `main/certs/ota/ota.pem`.
 
-```
+```console
 > pwd
 /home/trombik/github/trombik/roomPing/src
 > cp path/to/your/public/ota_certificate.pem main/certs/ota/ota.pem
@@ -182,7 +182,7 @@ Path to the certificate for `OTA` is `main/certs/ota/ota.pem`.
 
 Path to the certificate for `MQTT` is `main/certs/mqtt/mqtt.pem`.
 
-```
+```console
 > pwd
 /home/trombik/github/trombik/roomPing/src
 > cp path/to/your/public/mqtt_certificate.pem main/certs/mqtt/mqtt.pem
@@ -194,7 +194,7 @@ Note that you also need to set `CONFIG_PROJECT_TLS_*` in `menuconfig`.
 
 Project configurations can be modified by `idf.py menuconfig`.
 
-```
+```console
 > $IDF_PATH/tools/idf.py menuconfig
 ```
 
@@ -202,7 +202,7 @@ Project configurations can be modified by `idf.py menuconfig`.
 
 Finally, the build.
 
-```
+```console
 > $IDF_PATH/tools/idf.py build
 ```
 
@@ -215,7 +215,7 @@ it](https://github.com/trombik/esp32-homie#known-bugs)  applies.
 
 An example of console outputs:
 
-```
+```console
 I (0) cpu_start: Starting scheduler on APP CPU.
 I (578) app_main: SHA-256 for the partition table: : d1c0e9d02fa9d26cd2e1984e7b5dd20157204f501ddc83ce82229e5f3175ee8b
 I (608) app_main: SHA-256 for bootloader: : 81a6c54a8cfd05f7cf69b8748d44a8e4693af1974d32903251a13cc300ff7d54
@@ -306,7 +306,7 @@ icmp,target_host=192.168.1.1,target_addr=192.168.1.1 average=1 15763795350000000
 
 An example of published `MQTT` messages:
 
-```
+```console
 homie/foo/$state init
 homie/foo/$homie 4.0.1
 homie/foo/$name mydevice
