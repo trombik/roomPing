@@ -1,5 +1,25 @@
 # CHANGELOG
 
+## Release 1.1.0
+
+* 5eff8f0 bugfix: lint, remove stale CHANGELOG
+* 7f1cc5e bugfix: lint
+* 78d306c bugfix: lint
+* 64a3093 bugfix: lint
+* 224af48 bugfix: lint
+* e65dcfa ci: import yamllint
+* 36e1d96 ci: inport markdownlint-cli
+* fb4bf64 bugfix: remove PROJECT_DEVICE_LOCATION
+* 9f411c0 doc: update README
+* a3da2f1 bugfix: update esp-homie to he latest
+* 9fbe8f9 doc: update demo screenshot
+* c411903 bugfix: s/esp32-/esp/
+* 7231f41 doc: document PROJECT_TARGET
+* 0c31c11 doc: document the crash
+* fdc054c import esp-homie
+* fef85a9 remove old esp32-homie
+* 48116ad doc: add Hardware notes for ESP-01
+
 ## Release 1.0.1
 
 * 3b9a29d bugfix: remove log
