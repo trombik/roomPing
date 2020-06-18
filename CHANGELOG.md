@@ -1,3 +1,5 @@
+# CHANGELOG
+
 ## Release 1.0.1
 
 * 3b9a29d bugfix: remove log

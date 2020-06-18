@@ -14,7 +14,7 @@
 
 `IDF_PATH` must be path to `esp-idf` directory.
 
-```
+```console
 export IDF_PATH=~/github/trombik/esp-idf
 ```
 
@@ -23,7 +23,7 @@ export IDF_PATH=~/github/trombik/esp-idf
 `PATH` must include path to the tool-chain `bin` directory, where
 `xtensa-esp32-elf-gcc` and others are.
 
-```
+```console
 export PATH="/usr/local/xtensa-esp32-elf/bin:$PATH"
 ```
 
@@ -31,7 +31,7 @@ export PATH="/usr/local/xtensa-esp32-elf/bin:$PATH"
 
 Set `ESPPORT` to serial port of your device.
 
-```
+```console
 export ESPPORT=/dev/ttyU0
 ```
 
@@ -40,7 +40,7 @@ export ESPPORT=/dev/ttyU0
 The `OTA` process fetches firmware over HTTPS. Create your own self-signed
 certificates.
 
-```
+```console
 > pwd
 /home/trombik/github/trombik/roomPing
 > openssl req -x509 -newkey rsa:2048 -keyout ca_key.pem -out ca_cert.pem -days 365 -nodes
@@ -72,7 +72,7 @@ name of `PROJECT_LATEST_APP_URL`.
 
 Copy the keys.
 
-```
+```console
 > cp ca_key.pem  src/main/certs/ca_key_ota.pem
 > cp ca_cert.pem src/main/certs/ca_cert_ota.pem
 ```
@@ -80,16 +80,12 @@ Copy the keys.
 #### Set `PROJECT_LATEST_APP_URL`
 
 Navigate to `Project configuration` -> `URL to the latest application`. Set
-the value to:
-
-```
-https://ip.add.re.ss:8070/build/roomPing.bin
-```
+the value to: `https://ip.add.re.ss:8070/build/roomPing.bin`.
 
 Make sure to replace `ip.add.re.ss` with the actual IP address of the local
 machine.
 
-```
+```console
 > $IDF_PATH/tools/idf.py menuconfig
 ```
 
@@ -103,7 +99,7 @@ Make sure the URL works.
 
 `wget(1)` example output:
 
-```
+```console
 > pwd
 /home/trombik/github/trombik/roomPing/src
 > wget --ca-certificate=main/certs/ca_cert_ota.pem https://192.168.1.54:8070/build/roomPing.bin
@@ -116,7 +112,7 @@ Saving to: ‘roomPing.bin’
 
 `fetch(1)` example output:
 
-```
+```console
 > pwd
 /home/trombik/github/trombik/roomPing/src
 > fetch --ca-cert main/certs/ca_cert_ota.pem  https://192.168.1.54:8070/build/roomPing.bin
@@ -129,7 +125,7 @@ roomPing.bin                                           826 kB  443 MBps    00s
 To perform `OTA`, the firmware on the device must be newer than `FIXME`. If
 not, update the firmware over USB serial.
 
-```
+```console
 > pwd
 /home/trombik/github/trombik/roomPing
 > cd src
@@ -142,6 +138,6 @@ Make sure the version of the running firmware is older than the new firmware.
 
 Set run to `esp/ota/set`.
 
-```
+```console
 > mosquitto_pub -h ip.add.re.ss -t 'homie/foo/esp/reboot/set' -m 'reboot'
 ```
