@@ -123,6 +123,30 @@ static void test_firmware()
 }
 #endif // defined(CONFIG_IDF_TARGET_ESP32)
 
+void show_device_info()
+{
+
+    uint8_t mac[6];
+    char   *macaddr;
+    esp_err_t err;
+
+    err = esp_read_mac(mac, ESP_MAC_WIFI_STA);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "esp_read_mac()");
+    }
+    if (-1 == asprintf(&macaddr, "%02X:%02X:%02X:%02X:%02X:%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5])) {
+        ESP_LOGE(TAG, "asprintf()");
+        goto fail;
+    }
+
+    ESP_LOGI(TAG, "Device location: %s", CONFIG_HOMIE_LOCATION);
+    ESP_LOGI(TAG, "Mac address: %s", macaddr);
+    free(macaddr);
+    return;
+fail:
+    abort();
+}
+
 void app_main()
 {
     time_t now;
@@ -139,6 +163,7 @@ void app_main()
     esp_log_level_set("HOMIE", ESP_LOG_DEBUG);
     */
 
+    show_device_info();
 #if defined(CONFIG_IDF_TARGET_ESP32)
     show_digests();
     test_firmware();
