@@ -57,7 +57,7 @@
 #define PUBLISH_TASK_REBOOT_ENABLED false
 #endif
 
-extern QueueHandle_t queue_metric;
+extern QueueHandle_t queue_metric_icmp;
 const int MQTT_CONNECTED_BIT = BIT0;
 extern int WIFI_CONNECTED_BIT;
 
@@ -125,10 +125,34 @@ homie_config_t homie_conf = {
     .node_lists = "icmp",
 };
 
+static esp_err_t drain_queue_icmp(int n) {
+    influx_metric_t influx_metric;
+    int i;
+
+    if (n < 1) {
+        goto noop;
+    }
+    for (i = 0; i < n; i++) {
+        if (xQueueReceive(
+                    queue_metric_icmp,
+                    &influx_metric,
+                    0) != pdPASS) {
+            ESP_LOGE(TAG, "xQueueReceive()");
+            continue;
+        }
+        printf("%s\n", influx_metric);
+        if (homie_publish("icmp/influx", QOS_1, RETAINED, influx_metric) <= 0) {
+            ESP_LOGE(TAG, "failed to publish icmp metric");
+        }
+    }
+noop:
+    return ESP_OK;
+}
+
 static void task_publish(void *pvParamters)
 {
-    influx_metric_t influx_metric;
     EventBits_t bits;
+    TickType_t last_wake_time;
     while (1) {
         bits = xEventGroupWaitBits(mqtt_event_group,
                                    MQTT_CONNECTED_BIT,
@@ -145,26 +169,13 @@ static void task_publish(void *pvParamters)
     }
 
     ESP_LOGI(TAG, "Starting the loop");
+    last_wake_time = xTaskGetTickCount();
     while (1) {
-        int i, n;
-        if ((n = uxQueueMessagesWaiting(queue_metric)) == 0) {
-            goto sleep;
+        int n;
+        if ((n = uxQueueMessagesWaiting(queue_metric_icmp)) > 0) {
+            drain_queue_icmp(n);
         }
-        for (i = 0; i < n; i++) {
-            if (xQueueReceive(
-                        queue_metric,
-                        &influx_metric,
-                        0) != pdPASS) {
-                ESP_LOGE(TAG, "xQueueReceive()");
-                continue;
-            }
-            printf("%s\n", influx_metric);
-            if (homie_publish("icmp/influx", QOS_1, RETAINED, influx_metric) <= 0) {
-                ESP_LOGE(TAG, "failed to publish");
-            }
-        }
-sleep:
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        vTaskDelayUntil(&last_wake_time, 1000 / portTICK_PERIOD_MS);
     }
 }
 

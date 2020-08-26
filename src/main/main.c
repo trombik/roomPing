@@ -47,7 +47,7 @@
 int WIFI_CONNECTED_BIT = BIT0;
 static const char *TAG = "app_main";
 EventGroupHandle_t s_wifi_event_group;
-QueueHandle_t queue_metric;
+QueueHandle_t queue_metric_icmp;
 
 #if defined(CONFIG_IDF_TARGET_ESP32)
 static void print_sha256 (const uint8_t *image_hash, const char *label)
@@ -217,8 +217,8 @@ void app_main()
     ESP_LOGI(TAG, "Configured time");
 
     ESP_LOGI(TAG, "Creating queue for metrics");
-    queue_metric = xQueueCreate(CONFIG_PROJECT_METRIC_QUEUE_SIZE, sizeof(influx_metric_t));
-    if (queue_metric == NULL) {
+    queue_metric_icmp = xQueueCreate(CONFIG_PROJECT_METRIC_QUEUE_SIZE, sizeof(influx_metric_t));
+    if (queue_metric_icmp == NULL) {
         ESP_LOGE(TAG, "xQueueCreate() failed");
         goto fail;
     }

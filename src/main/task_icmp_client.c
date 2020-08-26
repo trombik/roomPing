@@ -40,7 +40,7 @@ struct icmp_metric {
     time_t tv_sec;
 };
 
-extern QueueHandle_t queue_metric;
+extern QueueHandle_t queue_metric_icmp;
 
 static void icmp_callback_on_ping_end(esp_ping_handle_t handle, void *args)
 {
@@ -95,7 +95,7 @@ static void icmp_callback_on_ping_end(esp_ping_handle_t handle, void *args)
         goto fail;
     }
 
-    if (xQueueSend(queue_metric, &influx_line, (TickType_t) 0) != pdTRUE) {
+    if (xQueueSend(queue_metric_icmp, &influx_line, (TickType_t) 0) != pdTRUE) {
         ESP_LOGW(task_name, "xQueueSend() failed");
         goto fail;
     }
@@ -115,7 +115,7 @@ static void icmp_callback_on_ping_end(esp_ping_handle_t handle, void *args)
                  sizeof(influx_line));
         goto fail;
     }
-    if (xQueueSend(queue_metric, &influx_line, (TickType_t) 0) != pdTRUE) {
+    if (xQueueSend(queue_metric_icmp, &influx_line, (TickType_t) 0) != pdTRUE) {
         ESP_LOGW(task_name, "xQueueSend() failed");
         goto fail;
     }
