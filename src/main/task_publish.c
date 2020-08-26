@@ -146,14 +146,24 @@ static void task_publish(void *pvParamters)
 
     ESP_LOGI(TAG, "Starting the loop");
     while (1) {
-        if (xQueueReceive(queue_metric,
-                          &influx_metric,
-                          PUBLISH_TASK_QUEUE_RECEIVE_TICK) == pdPASS) {
+        int i, n;
+        if ((n = uxQueueMessagesWaiting(queue_metric)) == 0) {
+            goto sleep;
+        }
+        for (i = 0; i < n; i++) {
+            if (xQueueReceive(
+                        queue_metric,
+                        &influx_metric,
+                        0) != pdPASS) {
+                ESP_LOGE(TAG, "xQueueReceive()");
+                continue;
+            }
             printf("%s\n", influx_metric);
             if (homie_publish("icmp/influx", QOS_1, RETAINED, influx_metric) <= 0) {
                 ESP_LOGE(TAG, "failed to publish");
             }
         }
+sleep:
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
