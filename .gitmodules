@@ -4,3 +4,6 @@
 [submodule "src/components/esp-homie"]
 	path = src/components/esp-homie
 	url = https://github.com/trombik/esp-homie
+[submodule "src/components/esp-idf-lib"]
+	path = src/components/esp-idf-lib
+	url = https://github.com/UncleRus/esp-idf-lib

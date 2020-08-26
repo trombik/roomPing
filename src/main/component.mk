@@ -2,7 +2,8 @@ COMPONENT_ADD_INCLUDEDIRS = .
 COMPONENT_OBJS :=  main.o \
 	sntp_connect.o \
 	task_icmp_client.o \
-	task_publish.o
+	task_publish.o \
+	task_bme280.o
 
 ifdef CONFIG_IDF_TARGET_ESP8266
 COMPONENT_OBJS += wifi_connect_esp8266.o

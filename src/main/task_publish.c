@@ -58,6 +58,7 @@
 #endif
 
 extern QueueHandle_t queue_metric_icmp;
+extern QueueHandle_t queue_metric_bme280;
 const int MQTT_CONNECTED_BIT = BIT0;
 extern int WIFI_CONNECTED_BIT;
 
@@ -149,6 +150,36 @@ noop:
     return ESP_OK;
 }
 
+static esp_err_t drain_queue_bme280(int n) {
+    bme280_metric_t bme280_metric;
+    int i;
+
+    if (n < 1) {
+        goto noop;
+    }
+    for (i = 0; i < n; i++) {
+        if (xQueueReceive(
+                    queue_metric_bme280,
+                    &bme280_metric,
+                    0) != pdPASS) {
+            ESP_LOGE(TAG, "xQueueReceive()");
+            continue;
+        }
+        printf("T: %0.2f H: %0.2f P: %0.2f\n", bme280_metric.t, bme280_metric.h, bme280_metric.p);
+        if (homie_publishf("bme280/temperature", QOS_1, RETAINED, "%0.2f", bme280_metric.t) <= 0) {
+            ESP_LOGE(TAG, "homie_publish(): bme280/temperature");
+        }
+        if (homie_publishf("bme280/humidity", QOS_1, RETAINED, "%0.2f", bme280_metric.h) <= 0) {
+            ESP_LOGE(TAG, "homie_publish(): bme280/humidity");
+        }
+        if (homie_publishf("bme280/pressure", QOS_1, RETAINED, "%0.2f", bme280_metric.p) <= 0) {
+            ESP_LOGE(TAG, "homie_publish(): bme280/pressure");
+        }
+    }
+noop:
+    return ESP_OK;
+}
+
 static void task_publish(void *pvParamters)
 {
     EventBits_t bits;
@@ -175,6 +206,9 @@ static void task_publish(void *pvParamters)
         if ((n = uxQueueMessagesWaiting(queue_metric_icmp)) > 0) {
             drain_queue_icmp(n);
         }
+        if ((n = uxQueueMessagesWaiting(queue_metric_bme280)) > 0) {
+            drain_queue_bme280(n);
+        }
         vTaskDelayUntil(&last_wake_time, 1000 / portTICK_PERIOD_MS);
     }
 }
@@ -182,18 +216,43 @@ static void task_publish(void *pvParamters)
 static void init_handler()
 {
     if (homie_publish("icmp/$name", QOS_1, RETAINED, "ICMP statics") <= 0) {
-        goto fail;
+        ESP_LOGW(TAG, "homie_publish(): icmp/$name");
     }
     if (homie_publish("icmp/$properties", QOS_1, RETAINED, "influx") <= 0) {
-        goto fail;
+        ESP_LOGW(TAG, "homie_publish(): icmp/$properties");
     }
     if (homie_publish("icmp/influx/$name", QOS_1, RETAINED, "Statistics in influx line format") <= 0) {
-        goto fail;
+        ESP_LOGW(TAG, "homie_publish(): icmp/influx/$name");
     }
     if (homie_publish("icmp/influx/$datatype", QOS_1, RETAINED, "string") <= 0) {
-        goto fail;
+        ESP_LOGW(TAG, "homie_publish(): icmp/influx/$datatype");
     }
-fail:
+    if (queue_metric_bme280 != NULL) {
+        if (homie_publish("bme280/$name", QOS_1, RETAINED, "BME280 sensor") <= 0) {
+            ESP_LOGW(TAG, "homie_publish(): bme280/$name");
+        }
+        if (homie_publish("bme280/$properties", QOS_1, RETAINED, "temperature,humidity,pressure") <= 0) {
+            ESP_LOGW(TAG, "homie_publish(): bme280/$properties");
+        }
+        if (homie_publish("bme280/temperature/$name", QOS_1, RETAINED, "Temperature") <= 0) {
+            ESP_LOGW(TAG, "homie_publish(): bme280/temperature/$name");
+        }
+        if (homie_publish("bme280/temperature/$datatype", QOS_1, RETAINED, "float") <= 0) {
+            ESP_LOGW(TAG, "homie_publish(): bme280/temperature/$datatype");
+        }
+        if (homie_publish("bme280/humidity/$name", QOS_1, RETAINED, "Humidity") <= 0) {
+            ESP_LOGW(TAG, "homie_publish(): bme280/humidity/$name");
+        }
+        if (homie_publish("bme280/humidity/$datatype", QOS_1, RETAINED, "float") <= 0) {
+            ESP_LOGW(TAG, "homie_publish(): bme280/humidity/$datatype");
+        }
+        if (homie_publish("bme280/pressure/$name", QOS_1, RETAINED, "Pressure") <= 0) {
+            ESP_LOGW(TAG, "homie_publish(): bme280/pressure/$name");
+        }
+        if (homie_publish("bme280/pressure/$datatype", QOS_1, RETAINED, "float") <= 0) {
+            ESP_LOGW(TAG, "homie_publish(): bme280/pressure/$datatype");
+        }
+    }
     return;
 }
 

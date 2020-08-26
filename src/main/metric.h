@@ -6,4 +6,10 @@
 #define METRIC_INFLUX_MAX_LEN CONFIG_PROJECT_METRIC_INFLUX_MAX_LEN
 typedef char influx_metric_t[METRIC_INFLUX_MAX_LEN];
 
+typedef struct {
+    float t;
+    float p;
+    float h;
+} bme280_metric_t;
+
 #endif

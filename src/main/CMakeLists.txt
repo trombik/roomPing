@@ -22,7 +22,8 @@ idf_component_register(SRCS "main.c"
                             "sntp_connect.c"
                             "task_icmp_client.c"
                             "task_publish.c"
+                            "task_bme280.c"
                             ${WIFI_CONNECT_SRCS}
     EMBED_TXTFILES ${CERTS}
-    REQUIRES "esp-homie" "nvs_flash" "mqtt" "esp_https_ota" "esp_wifi"
+    REQUIRES "esp-homie" "nvs_flash" "mqtt" "esp_https_ota" "esp_wifi" "bmp280"
     INCLUDE_DIRS ".")

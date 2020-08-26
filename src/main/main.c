@@ -25,11 +25,13 @@
 #include <esp_partition.h>
 #include <esp_flash_partitions.h>
 #include <esp_ota_ops.h>
+#include <i2cdev.h>
 
 #include "esp_idf_lib_helpers.h"
 #include "wifi_connect.h"
 #include "sntp_connect.h"
 #include "task_icmp_client.h"
+#include "task_bme280.h"
 #include "task_publish.h"
 #include "target.h"
 #include "metric.h"
@@ -48,6 +50,7 @@ int WIFI_CONNECTED_BIT = BIT0;
 static const char *TAG = "app_main";
 EventGroupHandle_t s_wifi_event_group;
 QueueHandle_t queue_metric_icmp;
+QueueHandle_t queue_metric_bme280;
 
 #if defined(CONFIG_IDF_TARGET_ESP32)
 static void print_sha256 (const uint8_t *image_hash, const char *label)
@@ -216,13 +219,26 @@ void app_main()
     }
     ESP_LOGI(TAG, "Configured time");
 
-    ESP_LOGI(TAG, "Creating queue for metrics");
+    ESP_LOGI(TAG, "Creating queue for icmp metrics");
     queue_metric_icmp = xQueueCreate(CONFIG_PROJECT_METRIC_QUEUE_SIZE, sizeof(influx_metric_t));
     if (queue_metric_icmp == NULL) {
         ESP_LOGE(TAG, "xQueueCreate() failed");
         goto fail;
     }
+    ESP_LOGI(TAG, "Creating queue for bme280 metrics");
+    queue_metric_bme280 = xQueueCreate(CONFIG_PROJECT_METRIC_QUEUE_SIZE, sizeof(bme280_metric_t));
+    if (queue_metric_bme280 == NULL) {
+        ESP_LOGE(TAG, "xQueueCreate() failed");
+        goto fail;
+    }
 
+    ESP_LOGI(TAG, "Creating bme_poller");
+    ESP_ERROR_CHECK(i2cdev_init());
+    if (init_bme280() != pdPASS) {
+        ESP_LOGW(TAG, "cannot create bme_poller");
+        vQueueDelete(queue_metric_bme280);
+        queue_metric_bme280 = NULL;
+    }
 
     ESP_LOGI(TAG, "Creating task_publish");
     ESP_ERROR_CHECK(task_publish_start());
